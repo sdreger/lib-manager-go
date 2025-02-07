@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/sdreger/lib-manager-go/internal/config"
 	"log/slog"
 	"os"
 	"runtime"
@@ -21,7 +22,17 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
-	logger.Info("Application init", "GOMAXPROCS", runtime.GOMAXPROCS(0))
-	
+	logger.Info("init service", "GOMAXPROCS", runtime.GOMAXPROCS(0))
+	appConfig, err := config.New()
+	if err != nil {
+		return err
+	}
+
+	logger.Info("starting service", slog.Group("build",
+		"revision", appConfig.BuildInfo.Revision,
+		"time", appConfig.BuildInfo.Time,
+		"dirty", appConfig.BuildInfo.Dirty,
+	))
+
 	return nil
 }
