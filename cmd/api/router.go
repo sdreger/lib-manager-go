@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/sdreger/lib-manager-go/cmd/api/errors"
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers"
+	"github.com/sdreger/lib-manager-go/cmd/api/handlers/system"
 	"log/slog"
 	"net/http"
 	"runtime/debug"
@@ -32,7 +33,7 @@ func (router *Router) GetHandler() http.Handler {
 }
 
 func (router *Router) RegisterHandlers() {
-
+	system.RegisterHandler(router.logger, router)
 }
 
 func (router *Router) RegisterRoute(method string, group string, path string, handler handlers.HTTPHandler) {
