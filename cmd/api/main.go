@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"log/slog"
 	"os"
+	"os/signal"
 	"runtime"
 	"runtime/debug"
+	"syscall"
 )
 
 func main() {
@@ -21,18 +24,30 @@ func main() {
 	}
 }
 
-func run(logger *slog.Logger) error {
+func run(logger *slog.Logger) (err error) {
 	logger.Info("init service", "GOMAXPROCS", runtime.GOMAXPROCS(0))
+
+	// ==================== Configuration parsing ====================
 	appConfig, err := config.New()
 	if err != nil {
 		return err
 	}
 
-	logger.Info("starting service", slog.Group("build",
+	// ==================== Start API Service ====================
+	logger.Info("starting API service", slog.Group("build",
 		"revision", appConfig.BuildInfo.Revision,
 		"time", appConfig.BuildInfo.Time,
 		"dirty", appConfig.BuildInfo.Dirty,
 	))
 
+	mainCtx, cancelFunc := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancelFunc()
+
+	serverAppErr := NewServerApp(appConfig, logger).Serve(mainCtx)
+	if serverAppErr != nil {
+		logger.Error("API service error", "error", serverAppErr.Error())
+	}
+
+	logger.Info("API service shutdown complete")
 	return nil
 }
