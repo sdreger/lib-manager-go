@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-var testResponse = "{\"status\":\"OK\"}"
+var testResponse = `{"status":"OK"}`
 
 func TestServerApp_ServeAndShutdown(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -47,8 +47,8 @@ func TestServerApp_ServeAndShutdown(t *testing.T) {
 func getTestHandler() handlers.HTTPHandler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(testResponse))
-		return nil
+		_, err := w.Write([]byte(testResponse))
+		return err
 	}
 }
 

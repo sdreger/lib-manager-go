@@ -21,7 +21,7 @@ func TestRenderDataJSON(t *testing.T) {
 		assert.Equal(t, statusCode, result.StatusCode)
 		bytes, err := io.ReadAll(result.Body)
 		assert.NoError(t, err, "should read body")
-		assert.Equal(t, "{\"data\":{\"subtitle\":\"World\",\"title\":\"Hello\"}}", string(bytes))
+		assert.JSONEq(t, `{"data":{"subtitle":"World","title":"Hello"}}`, string(bytes))
 	}
 }
 
@@ -41,7 +41,7 @@ func TestRenderErrorJSON(t *testing.T) {
 		assert.Equal(t, statusCode, result.StatusCode)
 		bytes, err := io.ReadAll(result.Body)
 		assert.NoError(t, err, "should read body")
-		assert.Equal(t, "{\"errors\":[{\"field\":\"title\",\"message\":\"can not be empty\"}]}", string(bytes))
+		assert.JSONEq(t, `{"errors":[{"field":"title","message":"can not be empty"}]}`, string(bytes))
 	}
 }
 
@@ -50,18 +50,18 @@ func TestRenderJSONWithHeaders(t *testing.T) {
 	statusCode := http.StatusOK
 
 	err := RenderJSONWithHeaders(w, statusCode, map[string]string{"title": "Hello", "subtitle": "World"}, http.Header{
-		"Content-Disposition": []string{"attachment; filename=\"Hello\""},
+		"Content-Disposition": []string{`attachment; filename="Hello"`},
 	})
 	result := w.Result()
 	defer result.Body.Close()
 
 	if assert.NoError(t, err, "should have no error during render data") {
 		assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
-		assert.Equal(t, "attachment; filename=\"Hello\"", result.Header.Get("Content-Disposition"))
+		assert.Equal(t, `attachment; filename="Hello"`, result.Header.Get("Content-Disposition"))
 		assert.Equal(t, statusCode, result.StatusCode)
 		bytes, err := io.ReadAll(result.Body)
 		assert.NoError(t, err, "should read body")
-		assert.Equal(t, "{\"subtitle\":\"World\",\"title\":\"Hello\"}", string(bytes))
+		assert.JSONEq(t, `{"subtitle":"World","title":"Hello"}`, string(bytes))
 	}
 }
 

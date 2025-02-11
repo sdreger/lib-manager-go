@@ -15,7 +15,7 @@ import (
 
 func TestRouter_Handle(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	testData := "{\"data\":\"test\"}"
+	testData := `{"data":"test"}`
 	errorData := "internal error"
 
 	r := NewRouter(logger)
@@ -36,8 +36,8 @@ func TestRouter_Handle(t *testing.T) {
 func getTestHandlerNoError(testData string) handlers.HTTPHandler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(testData))
-		return nil
+		_, err := w.Write([]byte(testData))
+		return err
 	}
 }
 
@@ -74,7 +74,7 @@ func checkResultError(t *testing.T, client *http.Client, URL string) {
 	if assert.NoError(t, err, "should return response") {
 		responseData, err2 := io.ReadAll(resp.Body)
 		if assert.NoError(t, err2, "body reading error") {
-			assert.Equal(t, "{\"errors\":[{\"message\":\"Internal Server Error\"}]}", string(responseData))
+			assert.JSONEq(t, `{"errors":[{"message":"Internal Server Error"}]}`, string(responseData))
 		}
 	}
 }

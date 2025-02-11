@@ -34,7 +34,7 @@ func TestHealthProbe(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		bytes, err := io.ReadAll(result.Body)
 		if assert.NoError(t, err, "should not return error") {
-			assert.Equal(t, "{\"status\":\"OK\"}", string(bytes))
+			assert.JSONEq(t, `{"status":"OK"}`, string(bytes))
 		}
 	}
 }

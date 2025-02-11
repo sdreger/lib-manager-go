@@ -115,7 +115,7 @@ func TestNewConfigWithWrongPort(t *testing.T) {
 	if assert.ErrorIs(t, err, env.ParseError{}) {
 		var parseError env.ParseError
 		errors.As(err, &parseError)
-		assert.Contains(t, parseError.Error(), "parsing \"wrong value\": invalid syntax")
+		assert.Contains(t, parseError.Error(), `parsing "wrong value": invalid syntax`)
 		assert.Empty(t, config, "config should not be empty")
 	}
 }
