@@ -12,15 +12,15 @@ type Handler struct {
 	logger *slog.Logger
 }
 
-func RegisterHandler(logger *slog.Logger, registrar handlers.RouteRegistrar) {
-	handler := Handler{
-		logger: logger,
-	}
-
-	registrar.RegisterRoute(http.MethodGet, "", "/health", handler.HealthProbe)
+func NewHandler(logger *slog.Logger) *Handler {
+	return &Handler{logger: logger}
 }
 
-func (h Handler) HealthProbe(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
+func (h *Handler) RegisterHandler(registrar handlers.RouteRegistrar) {
+	registrar.RegisterRoute(http.MethodGet, "", "/health", h.HealthProbe)
+}
+
+func (h *Handler) HealthProbe(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
 	defer func() {
 		if req.Body != nil {
 			req.Body.Close()

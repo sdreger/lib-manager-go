@@ -13,11 +13,11 @@ import (
 )
 
 func TestRegisterHandler(t *testing.T) {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	testRegistrar := handlers.TestRegistrar{}
-	RegisterHandler(logger, &testRegistrar)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
+	testRegistrar := handlers.RouteRegistrarMock{}
+	h := NewHandler(logger)
+	h.RegisterHandler(&testRegistrar)
 
-	h := Handler{}
 	assert.True(t, testRegistrar.IsRouteRegistered("GET /health", h.HealthProbe))
 }
 

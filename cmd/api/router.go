@@ -33,7 +33,7 @@ func (router *Router) GetHandler() http.Handler {
 }
 
 func (router *Router) RegisterHandlers() {
-	system.RegisterHandler(router.logger, router)
+	system.NewHandler(router.logger).RegisterHandler(router)
 }
 
 func (router *Router) RegisterRoute(method string, group string, path string, handler handlers.HTTPHandler) {
