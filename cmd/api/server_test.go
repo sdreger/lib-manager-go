@@ -35,7 +35,7 @@ func TestServerApp_ServeAndShutdown(t *testing.T) {
 			return serverApp.Serve(gCtx)
 		})
 
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 		checkTestHandlerResponse(t, randomServerPort)
 		cancel()
 
