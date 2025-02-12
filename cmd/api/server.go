@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"log/slog"
 	"net"
@@ -16,11 +17,11 @@ type ServerApp struct {
 	router *Router
 }
 
-func NewServerApp(config config.AppConfig, logger *slog.Logger) *ServerApp {
+func NewServerApp(config config.AppConfig, logger *slog.Logger, db *sqlx.DB) *ServerApp {
 	return &ServerApp{
 		config: config,
 		logger: logger,
-		router: NewRouter(logger),
+		router: NewRouter(logger, db),
 	}
 }
 

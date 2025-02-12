@@ -18,7 +18,7 @@ func TestRouter_Handle(t *testing.T) {
 	testData := `{"data":"test"}`
 	errorData := "internal error"
 
-	r := NewRouter(logger)
+	r := NewRouter(logger, nil)
 	r.RegisterRoute(http.MethodGet, "/api/v1", "/group-test", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/no-group-test", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/error", getTestHandlerError(errorData))

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"github.com/sdreger/lib-manager-go/cmd/api/errors"
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers"
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers/system"
@@ -17,12 +18,12 @@ type Router struct {
 	routesCount atomic.Int32
 }
 
-func NewRouter(logger *slog.Logger) *Router {
+func NewRouter(logger *slog.Logger, db *sqlx.DB) *Router {
 	router := Router{
 		mux:    http.NewServeMux(),
 		logger: logger,
 	}
-	router.RegisterHandlers()
+	router.RegisterHandlers(db)
 	logger.Info("router initialized", "registeredRoutes", router.routesCount.Load())
 
 	return &router
@@ -32,7 +33,7 @@ func (router *Router) GetHandler() http.Handler {
 	return router.mux
 }
 
-func (router *Router) RegisterHandlers() {
+func (router *Router) RegisterHandlers(db *sqlx.DB) {
 	system.NewHandler(router.logger).RegisterHandler(router)
 }
 
