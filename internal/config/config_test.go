@@ -12,29 +12,56 @@ import (
 )
 
 var (
-	defaultHost               = "0.0.0.0"
-	defaultPort               = 8080
-	defaultReadTimeout, _     = time.ParseDuration("5s")
-	defaultWriteTimeout, _    = time.ParseDuration("10s")
-	defaultIdleTimeout, _     = time.ParseDuration("120s")
-	defaultShutdownTimeout, _ = time.ParseDuration("20s")
+	defaultHTTPHost               = "0.0.0.0"
+	defaultHTTPPort               = 8080
+	defaultHTTPReadTimeout, _     = time.ParseDuration("5s")
+	defaultHTTPWriteTimeout, _    = time.ParseDuration("10s")
+	defaultHTTPIdleTimeout, _     = time.ParseDuration("120s")
+	defaultHTTPShutdownTimeout, _ = time.ParseDuration("20s")
+
+	defaultDBDriver   = "postgres"
+	defaultDBHost     = "127.0.0.1"
+	defaultDBPort     = 5432
+	defaultDBUser     = "postgres"
+	defaultDBPassword = "postgres"
+	defaultDBName     = "sandbox"
+	defaultDBSchema   = "ebook"
+	defaultDBMaxIdle  = 2
+	defaultDBMaxOpen  = 10
+	defaultDBSSLMode  = "disable"
+	defaultDBTimezone = "UTC"
 )
 
 func TestNewConfigDefaults(t *testing.T) {
 
 	config, err := New()
 	if assert.NoError(t, err, "should parse default config") {
-		assert.NotEmpty(t, config, "config should not be empty")
-		assert.Equal(t, defaultHost, config.HTTP.Host)
-		assert.Equal(t, defaultPort, config.HTTP.Port)
-		assert.Equal(t, defaultReadTimeout, config.HTTP.ReadTimeout)
-		assert.Equal(t, defaultWriteTimeout, config.HTTP.WriteTimeout)
-		assert.Equal(t, defaultIdleTimeout, config.HTTP.IdleTimeout)
-		assert.Equal(t, defaultShutdownTimeout, config.HTTP.ShutdownTimeout)
+		if assert.NotEmpty(t, config.HTTP, "HTTP config should not be empty") {
+			assert.Equal(t, defaultHTTPHost, config.HTTP.Host)
+			assert.Equal(t, defaultHTTPPort, config.HTTP.Port)
+			assert.Equal(t, defaultHTTPReadTimeout, config.HTTP.ReadTimeout)
+			assert.Equal(t, defaultHTTPWriteTimeout, config.HTTP.WriteTimeout)
+			assert.Equal(t, defaultHTTPIdleTimeout, config.HTTP.IdleTimeout)
+			assert.Equal(t, defaultHTTPShutdownTimeout, config.HTTP.ShutdownTimeout)
+		}
+
+		if assert.NotEmpty(t, config.DB, "DB config should not be empty") {
+			assert.Equal(t, defaultDBDriver, config.DB.Driver)
+			assert.Equal(t, defaultDBHost, config.DB.Host)
+			assert.Equal(t, defaultDBPort, config.DB.Port)
+			assert.Equal(t, defaultDBUser, config.DB.User)
+			assert.Equal(t, defaultDBPassword, config.DB.Password)
+			assert.Equal(t, defaultDBName, config.DB.Name)
+			assert.Equal(t, defaultDBSchema, config.DB.Schema)
+			assert.Equal(t, defaultDBMaxIdle, config.DB.MaxIdle)
+			assert.Equal(t, defaultDBMaxOpen, config.DB.MaxOpen)
+			assert.Equal(t, defaultDBSSLMode, config.DB.SSLMode)
+			assert.Equal(t, defaultDBTimezone, config.DB.Timezone)
+		}
 	}
 }
 
-func TestNewConfigCustomEnv(t *testing.T) {
+func TestNewConfigCustomHTTPEnv(t *testing.T) {
 	customHost := "127.0.0.1"
 	customPort := 9090
 	customReadTimeout, _ := time.ParseDuration("3s")
@@ -60,6 +87,48 @@ func TestNewConfigCustomEnv(t *testing.T) {
 	}
 }
 
+func TestNewConfigCustomDBEnv(t *testing.T) {
+	customDriver := "sqlite3"
+	customHost := "192.168.1.100"
+	customPort := 5555
+	customUser := "testUser"
+	customPassword := "testPassword"
+	customName := "testDB"
+	customSchema := "testSchema"
+	customMaxIdle := 20
+	customMaxOpen := 50
+	customSSLMode := "enable"
+	customTimezone := "CEST"
+
+	_ = os.Setenv(getEnvKey("DB_DRIVER"), customDriver)
+	_ = os.Setenv(getEnvKey("DB_HOST"), customHost)
+	_ = os.Setenv(getEnvKey("DB_PORT"), strconv.Itoa(customPort))
+	_ = os.Setenv(getEnvKey("DB_USER"), customUser)
+	_ = os.Setenv(getEnvKey("DB_PASSWORD"), customPassword)
+	_ = os.Setenv(getEnvKey("DB_NAME"), customName)
+	_ = os.Setenv(getEnvKey("DB_SCHEMA"), customSchema)
+	_ = os.Setenv(getEnvKey("DB_MAX_IDLE"), strconv.Itoa(customMaxIdle))
+	_ = os.Setenv(getEnvKey("DB_MAX_OPEN"), strconv.Itoa(customMaxOpen))
+	_ = os.Setenv(getEnvKey("DB_SSL_MODE"), customSSLMode)
+	_ = os.Setenv(getEnvKey("DB_TIMEZONE"), customTimezone)
+
+	config, err := New()
+	if assert.NoError(t, err, "should parse custom config") {
+		assert.NotEmpty(t, config, "config should not be empty")
+		assert.Equal(t, customDriver, config.DB.Driver)
+		assert.Equal(t, customHost, config.DB.Host)
+		assert.Equal(t, customPort, config.DB.Port)
+		assert.Equal(t, customUser, config.DB.User)
+		assert.Equal(t, customPassword, config.DB.Password)
+		assert.Equal(t, customName, config.DB.Name)
+		assert.Equal(t, customSchema, config.DB.Schema)
+		assert.Equal(t, customMaxIdle, config.DB.MaxIdle)
+		assert.Equal(t, customMaxOpen, config.DB.MaxOpen)
+		assert.Equal(t, customSSLMode, config.DB.SSLMode)
+		assert.Equal(t, customTimezone, config.DB.Timezone)
+	}
+}
+
 func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("HTTP_HOST"), "")
 	_ = os.Setenv(getEnvKey("HTTP_PORT"), "")
@@ -68,15 +137,42 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("HTTP_IDLE_TIMEOUT"), "")
 	_ = os.Setenv(getEnvKey("HTTP_SHUTDOWN_TIMEOUT"), "")
 
+	_ = os.Setenv(getEnvKey("DB_Driver"), "")
+	_ = os.Setenv(getEnvKey("DB_HOST"), "")
+	_ = os.Setenv(getEnvKey("DB_PORT"), "")
+	_ = os.Setenv(getEnvKey("DB_USER"), "")
+	_ = os.Setenv(getEnvKey("DB_PASSWORD"), "")
+	_ = os.Setenv(getEnvKey("DB_NAME"), "")
+	_ = os.Setenv(getEnvKey("DB_SCHEMA"), "")
+	_ = os.Setenv(getEnvKey("DB_MAX_IDLE"), "")
+	_ = os.Setenv(getEnvKey("DB_MAX_OPEN"), "")
+	_ = os.Setenv(getEnvKey("DB_SSL_MODE"), "")
+	_ = os.Setenv(getEnvKey("DB_TIMEZONE"), "")
+
 	config, err := New()
 	if assert.NoError(t, err, "should parse default config") {
-		assert.NotEmpty(t, config, "config should not be empty")
-		assert.Equal(t, defaultHost, config.HTTP.Host)
-		assert.Equal(t, defaultPort, config.HTTP.Port)
-		assert.Equal(t, defaultReadTimeout, config.HTTP.ReadTimeout)
-		assert.Equal(t, defaultWriteTimeout, config.HTTP.WriteTimeout)
-		assert.Equal(t, defaultIdleTimeout, config.HTTP.IdleTimeout)
-		assert.Equal(t, defaultShutdownTimeout, config.HTTP.ShutdownTimeout)
+		if assert.NotEmpty(t, config.HTTP, "HTTP config should not be empty") {
+			http := config.HTTP
+			assert.Equal(t, defaultHTTPHost, http.Host)
+			assert.Equal(t, defaultHTTPPort, http.Port)
+			assert.Equal(t, defaultHTTPReadTimeout, http.ReadTimeout)
+			assert.Equal(t, defaultHTTPWriteTimeout, http.WriteTimeout)
+			assert.Equal(t, defaultHTTPIdleTimeout, http.IdleTimeout)
+			assert.Equal(t, defaultHTTPShutdownTimeout, http.ShutdownTimeout)
+		}
+
+		if assert.NotEmpty(t, config.DB, "DB config should not be empty") {
+			assert.Equal(t, defaultDBHost, config.DB.Host)
+			assert.Equal(t, defaultDBPort, config.DB.Port)
+			assert.Equal(t, defaultDBUser, config.DB.User)
+			assert.Equal(t, defaultDBPassword, config.DB.Password)
+			assert.Equal(t, defaultDBName, config.DB.Name)
+			assert.Equal(t, defaultDBSchema, config.DB.Schema)
+			assert.Equal(t, defaultDBMaxIdle, config.DB.MaxIdle)
+			assert.Equal(t, defaultDBMaxOpen, config.DB.MaxOpen)
+			assert.Equal(t, defaultDBSSLMode, config.DB.SSLMode)
+			assert.Equal(t, defaultDBTimezone, config.DB.Timezone)
+		}
 	}
 }
 
