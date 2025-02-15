@@ -7,7 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"log/slog"
-	"net"
 	"net/http"
 )
 
@@ -28,9 +27,6 @@ func NewServerApp(config config.AppConfig, logger *slog.Logger, db *sqlx.DB) *Se
 func (app *ServerApp) Serve(ctx context.Context) error {
 	appConfig := app.config
 	server := &http.Server{
-		BaseContext: func(listener net.Listener) context.Context {
-			return ctx
-		},
 		Addr:         fmt.Sprintf("%s:%d", appConfig.HTTP.Host, appConfig.HTTP.Port),
 		ErrorLog:     slog.NewLogLogger(app.logger.Handler(), slog.LevelWarn),
 		ReadTimeout:  appConfig.HTTP.ReadTimeout,
