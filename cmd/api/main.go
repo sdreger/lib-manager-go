@@ -20,7 +20,7 @@ func main() {
 	err := run(logger)
 	if err != nil {
 		trace := string(debug.Stack())
-		logger.Error(err.Error(), "trace", trace)
+		logger.Error("Fatal application error", "error", err.Error(), "trace", trace)
 		os.Exit(1)
 	}
 }
@@ -56,16 +56,20 @@ func run(logger *slog.Logger) (err error) {
 	logger.Info("database connection established", "host", appConfig.DB.Host, "stats", db.Stats())
 	defer func() {
 		logger.Info("closing database connection")
-		err = db.Close()
-		if err == nil {
-			logger.Info("database connection closed successfully")
+		if err := db.Close(); err != nil {
+			logger.Error("can not close database connection", "error", err)
 		}
+		logger.Info("database connection closed successfully")
 	}()
 
+	// ==================== Run DB Migration ====================
+	if err := database.Migrate(logger, appConfig.DB, db.DB); err != nil {
+		return err
+	}
+
 	// ==================== Start HTTP Server ====================
-	serverAppErr := NewServerApp(appConfig, logger, db).Serve(mainCtx)
-	if serverAppErr != nil {
-		logger.Error("API service error", "error", serverAppErr.Error())
+	if serverAppErr := NewServerApp(appConfig, logger, db).Serve(mainCtx); serverAppErr != nil {
+		return serverAppErr
 	}
 
 	return nil

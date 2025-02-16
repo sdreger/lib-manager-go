@@ -9,12 +9,15 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"log/slog"
+	"os"
 	"strconv"
 	"testing"
 	"time"
 )
 
-func TestOpenDBConnection(t *testing.T) {
+func TestOpenDBConnectionAndMigrate(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx := context.Background()
 	appConfig, err := config.New()
 	require.NoError(t, err, "error loading config")
@@ -44,7 +47,20 @@ func TestOpenDBConnection(t *testing.T) {
 	dbConnection, err := openDBConnection(t, dbConfig, pg)
 	require.NoError(t, err, "error connecting to postgres test container")
 	require.NotNil(t, dbConnection, "test container connection is nil")
-	dbConnection.Close()
+	defer dbConnection.Close()
+
+	t.Run("fail migration", func(t *testing.T) {
+		dbConfig.AutoMigrate = true
+		dbConfig.Schema = "$" // wrong schema name
+		err = Migrate(logger, dbConfig, dbConnection.DB)
+		require.Error(t, err, "should have failed to migrate")
+	})
+
+	t.Run("success migration", func(t *testing.T) {
+		dbConfig.Schema = "ebook"
+		err = Migrate(logger, dbConfig, dbConnection.DB)
+		assert.NoError(t, err, "error running migration")
+	})
 }
 
 func openDBConnection(t *testing.T, dbConfig config.DBConfig, pg *postgres.PostgresContainer) (*sqlx.DB, error) {
@@ -60,6 +76,29 @@ func openDBConnection(t *testing.T, dbConfig config.DBConfig, pg *postgres.Postg
 	dbConfig.Port = port
 	dbConfig.Host = host
 	return Open(dbConfig)
+}
+
+func TestSkipMigrate(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	appConfig, err := config.New()
+	require.NoError(t, err, "error loading config")
+
+	appConfig.DB.AutoMigrate = false
+	err = Migrate(logger, appConfig.DB, nil)
+	assert.NoError(t, err, "error skipping migration")
+}
+
+func TestErrorMigrate(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	appConfig, err := config.New()
+	require.NoError(t, err, "error loading config")
+
+	dbConfig := appConfig.DB
+	dbConfig.AutoMigrate = true
+	dbConfig.Driver = "unknown"
+	err = Migrate(logger, dbConfig, nil)
+	require.Error(t, err, "should have failed due to unknown dialect")
+	assert.Contains(t, err.Error(), `"unknown": unknown dialect`)
 }
 
 func TestCannotPingDBConnection(t *testing.T) {
