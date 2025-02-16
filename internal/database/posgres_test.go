@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"github.com/jmoiron/sqlx"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,13 +15,14 @@ import (
 )
 
 func TestOpenDBConnection(t *testing.T) {
+	ctx := context.Background()
 	appConfig, err := config.New()
 	require.NoError(t, err, "error loading config")
 	dbConfig := appConfig.DB
 
 	// https://golang.testcontainers.org/modules/postgres/
 	// Postgres Docker container: https://hub.docker.com/_/postgres
-	pg, err := postgres.Run(context.Background(),
+	pg, err := postgres.Run(ctx,
 		"postgres:17.2-alpine3.21",
 		postgres.WithDatabase(dbConfig.Name),
 		postgres.WithUsername(dbConfig.User),
@@ -39,19 +41,25 @@ func TestOpenDBConnection(t *testing.T) {
 		}
 	}()
 
-	inspect, err := pg.Inspect(context.Background())
-	if assert.NoError(t, err, "error inspecting postgres test container") {
-		ports := inspect.NetworkSettings.Ports
-		portString, err := strconv.Atoi(ports["5432/tcp"][0].HostPort)
-		if assert.NoError(t, err, "error converting port to int") {
-			dbConfig.Port = portString
-			dbConnection, err := Open(dbConfig)
-			if assert.NoError(t, err, "error connecting to postgres test container") {
-				assert.NotNil(t, dbConnection, "test container connection is nil")
-				dbConnection.Close()
-			}
-		}
-	}
+	dbConnection, err := openDBConnection(t, dbConfig, pg)
+	require.NoError(t, err, "error connecting to postgres test container")
+	require.NotNil(t, dbConnection, "test container connection is nil")
+	dbConnection.Close()
+}
+
+func openDBConnection(t *testing.T, dbConfig config.DBConfig, pg *postgres.PostgresContainer) (*sqlx.DB, error) {
+	ctx := context.Background()
+	containerPort, err := pg.MappedPort(ctx, "5432/tcp")
+	require.NoError(t, err, "error getting mapped port 5432/tcp")
+	port, err := strconv.Atoi(containerPort.Port())
+	require.NoError(t, err, "error converting mapped port to int")
+
+	host, err := pg.Host(ctx)
+	require.NoError(t, err, "error getting test container host")
+
+	dbConfig.Port = port
+	dbConfig.Host = host
+	return Open(dbConfig)
 }
 
 func TestCannotPingDBConnection(t *testing.T) {
