@@ -19,17 +19,18 @@ var (
 	defaultHTTPIdleTimeout, _     = time.ParseDuration("120s")
 	defaultHTTPShutdownTimeout, _ = time.ParseDuration("20s")
 
-	defaultDBDriver   = "postgres"
-	defaultDBHost     = "127.0.0.1"
-	defaultDBPort     = 5432
-	defaultDBUser     = "postgres"
-	defaultDBPassword = "postgres"
-	defaultDBName     = "sandbox"
-	defaultDBSchema   = "ebook"
-	defaultDBMaxIdle  = 2
-	defaultDBMaxOpen  = 10
-	defaultDBSSLMode  = "disable"
-	defaultDBTimezone = "UTC"
+	defaultDBDriver    = "postgres"
+	defaultDBHost      = "127.0.0.1"
+	defaultDBPort      = 5432
+	defaultDBUser      = "postgres"
+	defaultDBPassword  = "postgres"
+	defaultDBName      = "sandbox"
+	defaultDBSchema    = "ebook"
+	defaultDBMaxIdle   = 2
+	defaultDBMaxOpen   = 10
+	defaultDBSSLMode   = "disable"
+	defaultDBTimezone  = "UTC"
+	defaultAutoMigrate = false
 )
 
 func TestNewConfigDefaults(t *testing.T) {
@@ -57,6 +58,7 @@ func TestNewConfigDefaults(t *testing.T) {
 			assert.Equal(t, defaultDBMaxOpen, config.DB.MaxOpen)
 			assert.Equal(t, defaultDBSSLMode, config.DB.SSLMode)
 			assert.Equal(t, defaultDBTimezone, config.DB.Timezone)
+			assert.Equal(t, defaultAutoMigrate, config.DB.AutoMigrate)
 		}
 	}
 }
@@ -99,6 +101,7 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 	customMaxOpen := 50
 	customSSLMode := "enable"
 	customTimezone := "CEST"
+	customAutoMigrate := true
 
 	_ = os.Setenv(getEnvKey("DB_DRIVER"), customDriver)
 	_ = os.Setenv(getEnvKey("DB_HOST"), customHost)
@@ -111,6 +114,7 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("DB_MAX_OPEN"), strconv.Itoa(customMaxOpen))
 	_ = os.Setenv(getEnvKey("DB_SSL_MODE"), customSSLMode)
 	_ = os.Setenv(getEnvKey("DB_TIMEZONE"), customTimezone)
+	_ = os.Setenv(getEnvKey("DB_AUTO_MIGRATE"), strconv.FormatBool(customAutoMigrate))
 
 	config, err := New()
 	if assert.NoError(t, err, "should parse custom config") {
@@ -126,6 +130,7 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 		assert.Equal(t, customMaxOpen, config.DB.MaxOpen)
 		assert.Equal(t, customSSLMode, config.DB.SSLMode)
 		assert.Equal(t, customTimezone, config.DB.Timezone)
+		assert.Equal(t, customAutoMigrate, config.DB.AutoMigrate)
 	}
 }
 
@@ -148,6 +153,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("DB_MAX_OPEN"), "")
 	_ = os.Setenv(getEnvKey("DB_SSL_MODE"), "")
 	_ = os.Setenv(getEnvKey("DB_TIMEZONE"), "")
+	_ = os.Setenv(getEnvKey("DB_AUTO_MIGRATE"), "")
 
 	config, err := New()
 	if assert.NoError(t, err, "should parse default config") {
@@ -172,6 +178,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 			assert.Equal(t, defaultDBMaxOpen, config.DB.MaxOpen)
 			assert.Equal(t, defaultDBSSLMode, config.DB.SSLMode)
 			assert.Equal(t, defaultDBTimezone, config.DB.Timezone)
+			assert.Equal(t, defaultAutoMigrate, config.DB.AutoMigrate)
 		}
 	}
 }
