@@ -10,3 +10,7 @@ dir: "{{.InterfaceDir}}"
 mockname: "Mock{{.InterfaceName}}"
 outpkg: "{{.PackageName}}"
 inpackage: True
+packages:
+  github.com/sdreger/lib-manager-go/internal/domain/book:
+    interfaces:
+      Store:
