@@ -2,15 +2,16 @@ package book
 
 import (
 	"context"
-	"fmt"
-	"github.com/jmoiron/sqlx"
-	"github.com/pressly/goose/v3"
+	"github.com/sdreger/lib-manager-go/internal/config"
+	"github.com/sdreger/lib-manager-go/internal/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"path/filepath"
+	"log/slog"
+	"os"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -19,20 +20,26 @@ const (
 	dbUser     = "test"
 	dBPassword = "test"
 	dbName     = "test"
-	schemaName = "ebook"
 )
 
 func TestStore(t *testing.T) {
 	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	testContainer := startDBContainer(t)
-	execSQL(t, testContainer, "CREATE SCHEMA IF NOT EXISTS "+schemaName)
-	runDBMigrations(t, testContainer)
+	dbConfig := getTestDBConfig(t, testContainer)
+	connection, err := database.Open(dbConfig)
+	require.NoError(t, err, "failed to open database connection")
+	err = database.Migrate(logger, dbConfig, connection.DB)
+	require.NoError(t, err, "failed to perform database migration")
+	err = connection.Close() // required, to be able to create a testContainer snapshot
+	require.NoError(t, err, "failed to close database connection")
+	
+	err = testContainer.Snapshot(ctx)
+	require.NoError(t, err, "failed to create database snapshot")
 
-	err := testContainer.Snapshot(ctx)
-	require.NoError(t, err)
-
-	connection := getDBConnection(t, testContainer)
+	connection, err = database.Open(dbConfig)
+	require.NoError(t, err, "failed to open database connection")
 	defer connection.Close()
 	store := NewDBStore(connection)
 
@@ -145,25 +152,22 @@ func startDBContainer(t *testing.T) *postgres.PostgresContainer {
 	return pg
 }
 
-func getDBConnection(t *testing.T, pg *postgres.PostgresContainer) *sqlx.DB {
-	connectionArgs := fmt.Sprintf("search_path=%s&sslmode=disable&timezone=UTC", schemaName)
-	connectionString, _ := pg.ConnectionString(context.Background(), connectionArgs)
-	dbConnection, err := sqlx.Open("postgres", connectionString)
-	require.NoError(t, err, "error connecting to postgres test container")
+func getTestDBConfig(t *testing.T, pg *postgres.PostgresContainer) config.DBConfig {
+	ctx := context.Background()
+	appConfig, err := config.New()
+	require.NoError(t, err, "failed to load application config")
 
-	return dbConnection
-}
+	containerPort, err := pg.MappedPort(ctx, "5432/tcp")
+	require.NoError(t, err, "error getting mapped port 5432/tcp")
+	port, err := strconv.Atoi(containerPort.Port())
+	require.NoError(t, err, "error converting mapped port to int")
 
-func runDBMigrations(t *testing.T, testContainer *postgres.PostgresContainer) {
-	connection := getDBConnection(t, testContainer)
-	absPath, err := filepath.Abs("../../database/migrations")
-	require.NoError(t, err)
+	dbConfig := appConfig.DB
+	dbConfig.Port = port
+	dbConfig.User = dbUser
+	dbConfig.Password = dBPassword
+	dbConfig.Name = dbName
+	dbConfig.AutoMigrate = true
 
-	err = goose.SetDialect("postgres")
-	require.NoError(t, err)
-
-	goose.SetTableName("ebook.goose_db_version")
-	err = goose.Up(connection.DB, absPath)
-	require.NoError(t, err)
-	connection.Close() // required, to be able to create a testContainer snapshot
+	return dbConfig
 }
