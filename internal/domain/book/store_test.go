@@ -2,10 +2,11 @@ package book
 
 import (
 	"context"
+	"github.com/jmoiron/sqlx"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/sdreger/lib-manager-go/internal/database"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -22,76 +23,100 @@ const (
 	dbName     = "test"
 )
 
-func TestStore(t *testing.T) {
+type TestStoreSuite struct {
+	suite.Suite
+	db            *sqlx.DB
+	testContainer *postgres.PostgresContainer
+	store         Store
+}
+
+func (s *TestStoreSuite) SetupSuite() {
 	ctx := context.Background()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	testContainer := startDBContainer(t)
-	dbConfig := getTestDBConfig(t, testContainer)
+	testContainer := startDBContainer(s.T())
+	dbConfig := getTestDBConfig(s.T(), testContainer)
 	connection, err := database.Open(dbConfig)
-	require.NoError(t, err, "failed to open database connection")
+	s.Require().NoError(err, "failed to open database connection")
 	err = database.Migrate(logger, dbConfig, connection.DB)
-	require.NoError(t, err, "failed to perform database migration")
+	s.Require().NoError(err, "failed to perform database migration")
 	err = connection.Close() // required, to be able to create a testContainer snapshot
-	require.NoError(t, err, "failed to close database connection")
-	
+	s.Require().NoError(err, "failed to close database connection")
+
 	err = testContainer.Snapshot(ctx)
-	require.NoError(t, err, "failed to create database snapshot")
+	s.Require().NoError(err, "failed to create database snapshot")
 
 	connection, err = database.Open(dbConfig)
-	require.NoError(t, err, "failed to open database connection")
-	defer connection.Close()
-	store := NewDBStore(connection)
+	s.Require().NoError(err, "failed to open database connection")
 
-	t.Run("getByIDErrorNotFound", func(t *testing.T) {
-		t.Cleanup(func() {
-			err := testContainer.Restore(ctx)
-			require.NoError(t, err)
-		})
-		getByIDErrorNotFound(t, store)
-	})
-
-	t.Run("getByIDErrorRelations", func(t *testing.T) {
-		t.Cleanup(func() {
-			err := testContainer.Restore(ctx)
-			require.NoError(t, err)
-		})
-		getByIDErrorRelations(t, store, testContainer)
-	})
-
-	t.Run("GetByIDBookWithAllRelations", func(t *testing.T) {
-		t.Cleanup(func() {
-			err := testContainer.Restore(ctx)
-			require.NoError(t, err)
-		})
-		getByIDBookWithAllRelations(t, store, testContainer)
-	})
+	s.store = NewDBStore(connection)
+	s.db = connection
+	s.testContainer = testContainer
 }
 
-func getByIDErrorNotFound(t *testing.T, store *DBStore) {
-	_, err := store.GetByID(context.Background(), 1)
-	assert.ErrorIs(t, err, ErrNotFound)
-}
-
-func getByIDErrorRelations(t *testing.T, store *DBStore, testContainer *postgres.PostgresContainer) {
+func (s *TestStoreSuite) SetupTest() {
 	ctx := context.Background()
-	addTestBook(t, testContainer)
+	err := s.testContainer.Restore(ctx)
+	s.Require().NoError(err)
+}
+
+func (s *TestStoreSuite) TearDownSuite() {
+	err := s.db.Close()
+	s.Require().NoError(err, "failed to close database connection")
+}
+
+func TestSuite(t *testing.T) {
+	suite.Run(t, new(TestStoreSuite))
+}
+
+// -------------------- Tests --------------------
+
+func (s *TestStoreSuite) Test_GetByID_ErrorNotFound() {
+	_, err := s.store.GetByID(context.Background(), bookID)
+	s.ErrorIs(err, ErrNotFound)
+}
+
+func (s *TestStoreSuite) Test_GetByID_ErrorRelations() {
+	ctx := context.Background()
+	addTestBook(s.T(), s.testContainer)
 
 	// The book has no 'authors', which is error
 	// Scan error on column index 18, name "authors": pq: parsing array element index 0: cannot convert nil to string
-	_, err := store.GetByID(ctx, 1)
-	require.Error(t, err)
+	_, err := s.store.GetByID(ctx, bookID)
+	s.Require().Error(err)
 }
 
-func getByIDBookWithAllRelations(t *testing.T, store *DBStore, testContainer *postgres.PostgresContainer) {
+func (s *TestStoreSuite) Test_GetByID_AllRelations() {
 	ctx := context.Background()
-	addTestBook(t, testContainer)
-	addTestBookRelations(t, testContainer)
+	addTestBook(s.T(), s.testContainer)
+	addTestBookRelations(s.T(), s.testContainer)
 
-	response, err := store.GetByID(ctx, 1)
-	require.NoError(t, err)
-	assert.Equal(t, int64(1), response.ID)
-	assert.Equal(t, "CockroachDB", response.Title)
+	response, err := s.store.GetByID(ctx, bookID)
+	s.Require().NoError(err)
+	testBook := getTestBook()
+	s.Equal(testBook.ID, response.ID)
+	s.Equal(testBook.Title, response.Title)
+	s.Equal(testBook.Subtitle, response.Subtitle)
+	s.Equal(testBook.Description, response.Description)
+	s.Equal(testBook.ISBN10, response.ISBN10)
+	s.Equal(testBook.ISBN13, response.ISBN13)
+	s.Equal(testBook.ASIN, response.ASIN)
+	s.Equal(testBook.Pages, response.Pages)
+	s.Equal(testBook.PublisherURL, response.PublisherURL)
+	s.Equal(testBook.Edition, response.Edition)
+	s.Equal(testBook.PubDate, response.PubDate.In(time.UTC))
+	s.Equal(testBook.BookFileName, response.BookFileName)
+	s.Equal(testBook.BookFileSize, response.BookFileSize)
+	s.Equal(testBook.CoverFileName, response.CoverFileName)
+	s.Equal(testBook.Language, response.Language)
+	s.Equal(testBook.Publisher, response.Publisher)
+	s.ElementsMatch(testBook.Authors, response.Authors)
+	s.ElementsMatch(testBook.Categories, response.Categories)
+	s.ElementsMatch(testBook.FileTypes, response.FileTypes)
+	s.ElementsMatch(testBook.Tags, response.Tags)
+	now := time.Now()
+	s.LessOrEqual(response.CreatedAt, now)
+	s.LessOrEqual(response.UpdatedAt, now)
 }
 
 func addTestBook(t *testing.T, testContainer *postgres.PostgresContainer) {
@@ -100,7 +125,7 @@ func addTestBook(t *testing.T, testContainer *postgres.PostgresContainer) {
 	bookStmt := `INSERT INTO ebook.books (id, title, subtitle, description, isbn10, isbn13, asin, pages, edition, 
                  language_id, publisher_id, publisher_url, pub_date, book_file_name, book_file_size, cover_file_name)
 				 VALUES (1, 'CockroachDB', 'The Definitive Guide', 'Get the lowdown on CockroachDB', '1234567890',
-				 9781234567890, 'BH12345678', 256, 2, 1, 1, 'https://amazon.com/1234567890.html', '2022-07-19', 
+				 9781234567890, 'BH34567890', 256, 2, 1, 1, 'https://amazon.com/dp/1234567890.html', '2022-07-19', 
 				 'OReilly.CockroachDB.2nd.Edition.1234567890.zip', 5192, '1234567890.jpg');
 `
 	for _, stmt := range []string{publisherStmt, languageStmt, bookStmt} {
