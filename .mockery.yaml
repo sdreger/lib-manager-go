@@ -1,0 +1,12 @@
+# https://vektra.github.io/mockery/latest/configuration
+# --------------------------------------------------
+# V2 deprecations
+issue-845-fix: True
+resolve-type-alias: False
+# --------------------------------------------------
+with-expecter: True
+filename: "{{.InterfaceName | snakecase}}_mock.go"
+dir: "{{.InterfaceDir}}"
+mockname: "Mock{{.InterfaceName}}"
+outpkg: "{{.PackageName}}"
+inpackage: True
