@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	defaultPage = 0
+	defaultPage = 1
 	defaultSize = 10
 )
 
@@ -44,10 +44,16 @@ func NewPageRequest(pageNumberString, pageSizeString string) (PageRequest, error
 
 	if pageNumberString != "" {
 		pageInt, err := strconv.Atoi(pageNumberString)
-		if err != nil || pageInt < 0 {
+		if err != nil {
 			return PageRequest{}, errors.ValidationError{
 				Field:   "page",
 				Message: "wrong page value: " + pageNumberString,
+			}
+		}
+		if pageInt < 1 {
+			return PageRequest{}, errors.ValidationError{
+				Field:   "page",
+				Message: "page must be greater than or equal to 1",
 			}
 		}
 		pageNumber = pageInt
@@ -71,7 +77,7 @@ func NewPageRequest(pageNumberString, pageSizeString string) (PageRequest, error
 }
 
 func (req PageRequest) Offset() uint64 {
-	return uint64(req.page * req.size)
+	return uint64((req.page - 1) * req.size)
 }
 
 func (req PageRequest) Limit() uint64 {
