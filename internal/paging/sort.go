@@ -3,15 +3,16 @@ package paging
 import (
 	"fmt"
 	"github.com/sdreger/lib-manager-go/cmd/api/errors"
+	"net/url"
 	"strings"
 )
 
 const (
-	sortAscending  = "ASC"
-	sortDescending = "DESC"
-
+	sortAscending        = "ASC"
+	sortDescending       = "DESC"
 	defaultSortBy        = "updated_at"
 	defaultSortDirection = sortDescending
+	queryParamSort       = "sort"
 )
 
 var (
@@ -27,7 +28,8 @@ type Sort struct {
 	direction string
 }
 
-func NewSort(sortString string) (Sort, error) {
+func NewSort(queryValues url.Values) (Sort, error) {
+	sortString := queryValues.Get(queryParamSort)
 	if sortString == "" {
 		return Sort{
 			field:     defaultSortBy,

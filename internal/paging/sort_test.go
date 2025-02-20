@@ -48,7 +48,8 @@ func TestNewSort(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.sortString, func(t *testing.T) {
-			sort, err := NewSort(tc.sortString)
+			values := map[string][]string{"sort": {tc.sortString}}
+			sort, err := NewSort(values)
 			if tc.err {
 				require.Error(t, err)
 				assert.ErrorAs(t, err, &errors.ValidationError{})

@@ -31,7 +31,8 @@ func TestNewPageRequest(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.page+":"+tc.size, func(t *testing.T) {
-			pageRequest, err := NewPageRequest(tc.page, tc.size)
+			values := map[string][]string{"page": {tc.page}, "size": {tc.size}}
+			pageRequest, err := NewPageRequest(values)
 			if tc.err {
 				require.Error(t, err)
 				assert.ErrorAs(t, err, &errors.ValidationError{})
@@ -67,7 +68,8 @@ func TestNewPage(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(t.Name(), func(t *testing.T) {
-			pageRequest, err := NewPageRequest(tc.requestPage, tc.requestSize)
+			values := map[string][]string{"page": {tc.requestPage}, "size": {tc.requestSize}}
+			pageRequest, err := NewPageRequest(values)
 			require.NoError(t, err, "error creating page request")
 			page := NewPage(pageRequest, tc.totalItems, tc.contentItems)
 

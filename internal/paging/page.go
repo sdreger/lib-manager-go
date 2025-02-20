@@ -2,12 +2,15 @@ package paging
 
 import (
 	"github.com/sdreger/lib-manager-go/cmd/api/errors"
+	"net/url"
 	"strconv"
 )
 
 const (
-	defaultPage = 1
-	defaultSize = 10
+	defaultPage    = 1
+	defaultSize    = 10
+	queryParamPage = "page"
+	queryParamSize = "size"
 )
 
 type Page[T any] struct {
@@ -38,9 +41,11 @@ type PageRequest struct {
 	size int64
 }
 
-func NewPageRequest(pageNumberString, pageSizeString string) (PageRequest, error) {
+func NewPageRequest(queryValues url.Values) (PageRequest, error) {
 	pageNumber := defaultPage
 	pageSize := defaultSize
+	pageNumberString := queryValues.Get(queryParamPage)
+	pageSizeString := queryValues.Get(queryParamSize)
 
 	if pageNumberString != "" {
 		pageInt, err := strconv.Atoi(pageNumberString)
