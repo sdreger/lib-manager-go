@@ -55,3 +55,44 @@ type bookEntity struct {
 	CreatedAt     time.Time      `db:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at"`
 }
+
+type LookupItem struct {
+	ID            int64     `json:"id"`
+	Title         string    `json:"title"`
+	Subtitle      string    `json:"subtitle"`
+	ISBN10        string    `json:"isbn10"`
+	ISBN13        int64     `json:"isbn13"`
+	ASIN          string    `json:"asin"`
+	Pages         uint16    `json:"pages"`
+	Edition       uint8     `json:"edition"`
+	PubDate       time.Time `json:"pub_date"`
+	BookFileSize  int64     `json:"book_file_size"`
+	CoverFileName string    `json:"cover_file_name"`
+	Publisher     string    `json:"publisher"`
+	Language      string    `json:"language"`
+	AuthorIDs     []int64   `json:"author_ids"`
+	CategoryIDs   []int64   `json:"category_ids"`
+	FileTypeIDs   []int64   `json:"file_types_ids"`
+	TagIDs        []int64   `json:"tag_ids"`
+}
+
+type lookupEntity struct {
+	ID            int64          `db:"id"`
+	Title         string         `db:"title"`
+	Subtitle      sql.NullString `db:"subtitle"`
+	ISBN10        sql.NullString `db:"isbn10"`
+	ISBN13        sql.NullInt64  `db:"isbn13"`
+	ASIN          sql.NullString `db:"asin"`
+	Pages         uint16         `db:"pages"`
+	Edition       uint8          `db:"edition"`
+	PubDate       time.Time      `db:"pub_date"`
+	BookFileSize  int64          `db:"book_file_size"`
+	CoverFileName string         `db:"cover_file_name"`
+	Publisher     string         `db:"publisher"`
+	Language      string         `db:"language"`
+	AuthorIDs     pq.Int64Array  `db:"author_ids"`
+	CategoryIDs   pq.Int64Array  `db:"category_ids"`
+	FileTypeIDs   pq.Int64Array  `db:"file_types_ids"`
+	TagIDs        pq.Int64Array  `db:"tag_ids"`
+	Total         int64          `db:"total"`
+}

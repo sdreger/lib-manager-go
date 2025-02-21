@@ -5,6 +5,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/sdreger/lib-manager-go/internal/database"
+	"github.com/sdreger/lib-manager-go/internal/paging"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
@@ -13,6 +14,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -119,6 +121,190 @@ func (s *TestStoreSuite) Test_GetByID_AllRelations() {
 	s.LessOrEqual(response.UpdatedAt, now)
 }
 
+func (s *TestStoreSuite) Test_Lookup_NoFilters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 3
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+}
+
+func (s *TestStoreSuite) Test_Lookup_AllFilters() {
+	query := "book 03"
+	publisherID := "2"
+	languageID := "2"
+	authorID := "2"
+	categoryID := "2"
+	fileTypeID := "2"
+	tagID := "2"
+
+	authorIDNum, _ := strconv.Atoi(authorID)
+	categoryIDNum, _ := strconv.Atoi(categoryID)
+	fileTypeIDNum, _ := strconv.Atoi(fileTypeID)
+	tagIDNum, _ := strconv.Atoi(tagID)
+
+	requestValues := map[string][]string{
+		"page":      {"1"},
+		"size":      {"10"},
+		"publisher": {publisherID},
+		"language":  {languageID},
+		"author":    {authorID},
+		"category":  {categoryID},
+		"file_type": {fileTypeID},
+		"tag":       {tagID},
+		"query":     {query},
+	}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 1
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book03 := response[0]
+	s.Equal(int64(3), book03.ID)
+	s.Equal("Manning", book03.Publisher)
+	s.Equal("German", book03.Language)
+	s.Contains(book03.AuthorIDs, int64(authorIDNum))
+	s.Contains(book03.CategoryIDs, int64(categoryIDNum))
+	s.Contains(book03.FileTypeIDs, int64(fileTypeIDNum))
+	s.Contains(book03.TagIDs, int64(tagIDNum))
+	s.Contains(strings.ToLower(book03.Title), strings.ToLower(query))
+}
+
+func (s *TestStoreSuite) Test_Lookup_PublisherFilters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}, "publisher": {"1"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 2
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book01 := response[0]
+	book02 := response[1]
+	s.Equal(int64(1), book01.ID)
+	s.Equal(int64(2), book02.ID)
+}
+
+func (s *TestStoreSuite) Test_Lookup_LanguageFilters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}, "language": {"1"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 2
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book01 := response[0]
+	book02 := response[1]
+	s.Equal(int64(1), book01.ID)
+	s.Equal(int64(2), book02.ID)
+}
+
+func (s *TestStoreSuite) Test_Lookup_AuthorFilters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}, "author": {"1"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 2
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book01 := response[0]
+	book02 := response[1]
+	s.Equal(int64(1), book01.ID)
+	s.Equal(int64(2), book02.ID)
+}
+
+func (s *TestStoreSuite) Test_Lookup_CategoryFilters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}, "category": {"1"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 2
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book01 := response[0]
+	book02 := response[1]
+	s.Equal(int64(1), book01.ID)
+	s.Equal(int64(2), book02.ID)
+}
+
+func (s *TestStoreSuite) Test_Lookup_FileTypeFilters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}, "file_type": {"1"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 2
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book01 := response[0]
+	book02 := response[1]
+	s.Equal(int64(1), book01.ID)
+	s.Equal(int64(2), book02.ID)
+}
+
+func (s *TestStoreSuite) Test_Lookup_TagFilters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}, "tag": {"1"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 2
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book01 := response[0]
+	book02 := response[1]
+	s.Equal(int64(1), book01.ID)
+	s.Equal(int64(2), book02.ID)
+}
+
+func (s *TestStoreSuite) Test_Lookup_QueryFilters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}, "query": {"book 01"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 1
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book01 := response[0]
+	s.Equal(int64(1), book01.ID)
+}
+
+func (s *TestStoreSuite) Test_Lookup_Filters() {
+	requestValues := map[string][]string{"page": {"1"}, "size": {"10"}, "sbn": {"3333333333"}}
+	response, total, err := performLookupRequest(s, requestValues)
+	s.Require().NoError(err)
+	booksFound := 1
+	s.Equal(int64(booksFound), total)
+	s.Len(response, booksFound)
+	book03 := response[0]
+	s.Equal(int64(3), book03.ID)
+}
+
+func (s *TestStoreSuite) Test_Lookup_Error() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // should cause DB query error
+
+	_, _, err := s.store.Lookup(ctx, paging.PageRequest{}, paging.Sort{}, Filter{})
+	s.Require().Error(err, "lookup should fail")
+}
+
+func performLookupRequest(s *TestStoreSuite, requestValues map[string][]string) (
+	[]LookupItem, int64, error) {
+
+	err := prepareTestData(s.testContainer, "testdata/book_lookup_filter.sql")
+	s.Require().NoError(err, "failed to load test SQL file")
+
+	ctx := context.Background()
+	pageRequest, err := paging.NewPageRequest(requestValues)
+	s.Require().NoError(err, "failed to build page request")
+	sort, err := paging.NewSort(requestValues)
+	s.Require().NoError(err, "failed to build sort")
+	filter, err := NewFilter(requestValues)
+	s.Require().NoError(err, "failed to build filter")
+
+	return s.store.Lookup(ctx, pageRequest, sort, filter)
+}
+
+func prepareTestData(testContainer *postgres.PostgresContainer, fileName string) error {
+	file, err := os.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+
+	return execSQL(testContainer, string(file))
+}
+
 func addTestBook(t *testing.T, testContainer *postgres.PostgresContainer) {
 	publisherStmt := `INSERT INTO ebook.publishers (id, name) VALUES (1, 'OReilly');`
 	languageStmt := `INSERT INTO ebook.languages (id, name) VALUES (1, 'English');`
@@ -129,7 +315,8 @@ func addTestBook(t *testing.T, testContainer *postgres.PostgresContainer) {
 				 'OReilly.CockroachDB.2nd.Edition.1234567890.zip', 5192, '1234567890.jpg');
 `
 	for _, stmt := range []string{publisherStmt, languageStmt, bookStmt} {
-		execSQL(t, testContainer, stmt)
+		err := execSQL(testContainer, stmt)
+		require.NoError(t, err)
 	}
 }
 
@@ -148,14 +335,15 @@ func addTestBookRelations(t *testing.T, testContainer *postgres.PostgresContaine
 		authorsStmt, bookAuthorsStmt, categoriesStmt, bookCategoriesStmt,
 		fileTypesStmt, bookFileTypesStmt, tagsStmt, bookTagsStmt,
 	} {
-		execSQL(t, testContainer, stmt)
+		err := execSQL(testContainer, stmt)
+		require.NoError(t, err)
 	}
 }
 
-func execSQL(t *testing.T, testContainer *postgres.PostgresContainer, statement string) {
+func execSQL(testContainer *postgres.PostgresContainer, statement string) error {
 	ctx := context.Background()
 	_, _, err := testContainer.Exec(ctx, []string{"psql", "-U", dbUser, "-d", dbName, "-c", statement})
-	require.NoError(t, err)
+	return err
 }
 
 func startDBContainer(t *testing.T) *postgres.PostgresContainer {
