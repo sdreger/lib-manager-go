@@ -5,6 +5,7 @@ package book
 import (
 	context "context"
 
+	paging "github.com/sdreger/lib-manager-go/internal/paging"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -74,6 +75,74 @@ func (_c *MockStore_GetByID_Call) Return(_a0 Book, _a1 error) *MockStore_GetByID
 }
 
 func (_c *MockStore_GetByID_Call) RunAndReturn(run func(context.Context, int64) (Book, error)) *MockStore_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Lookup provides a mock function with given fields: ctx, page, sort, filter
+func (_m *MockStore) Lookup(ctx context.Context, page paging.PageRequest, sort paging.Sort, filter Filter) ([]LookupItem, int64, error) {
+	ret := _m.Called(ctx, page, sort, filter)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Lookup")
+	}
+
+	var r0 []LookupItem
+	var r1 int64
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, paging.PageRequest, paging.Sort, Filter) ([]LookupItem, int64, error)); ok {
+		return rf(ctx, page, sort, filter)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, paging.PageRequest, paging.Sort, Filter) []LookupItem); ok {
+		r0 = rf(ctx, page, sort, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]LookupItem)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, paging.PageRequest, paging.Sort, Filter) int64); ok {
+		r1 = rf(ctx, page, sort, filter)
+	} else {
+		r1 = ret.Get(1).(int64)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, paging.PageRequest, paging.Sort, Filter) error); ok {
+		r2 = rf(ctx, page, sort, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// MockStore_Lookup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Lookup'
+type MockStore_Lookup_Call struct {
+	*mock.Call
+}
+
+// Lookup is a helper method to define mock.On call
+//   - ctx context.Context
+//   - page paging.PageRequest
+//   - sort paging.Sort
+//   - filter Filter
+func (_e *MockStore_Expecter) Lookup(ctx interface{}, page interface{}, sort interface{}, filter interface{}) *MockStore_Lookup_Call {
+	return &MockStore_Lookup_Call{Call: _e.mock.On("Lookup", ctx, page, sort, filter)}
+}
+
+func (_c *MockStore_Lookup_Call) Run(run func(ctx context.Context, page paging.PageRequest, sort paging.Sort, filter Filter)) *MockStore_Lookup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(paging.PageRequest), args[2].(paging.Sort), args[3].(Filter))
+	})
+	return _c
+}
+
+func (_c *MockStore_Lookup_Call) Return(_a0 []LookupItem, _a1 int64, _a2 error) *MockStore_Lookup_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *MockStore_Lookup_Call) RunAndReturn(run func(context.Context, paging.PageRequest, paging.Sort, Filter) ([]LookupItem, int64, error)) *MockStore_Lookup_Call {
 	_c.Call.Return(run)
 	return _c
 }
