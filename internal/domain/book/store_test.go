@@ -80,18 +80,19 @@ func (s *TestStoreSuite) Test_GetByID_ErrorNotFound() {
 
 func (s *TestStoreSuite) Test_GetByID_ErrorRelations() {
 	ctx := context.Background()
-	addTestBook(s.T(), s.testContainer)
+	err := prepareTestData(s.testContainer, "testdata/book_required_relations.sql")
+	s.Require().NoError(err, "failed to load test SQL file")
 
 	// The book has no 'authors', which is error
 	// Scan error on column index 18, name "authors": pq: parsing array element index 0: cannot convert nil to string
-	_, err := s.store.GetByID(ctx, bookID)
+	_, err = s.store.GetByID(ctx, bookID)
 	s.Require().Error(err)
 }
 
 func (s *TestStoreSuite) Test_GetByID_AllRelations() {
 	ctx := context.Background()
-	addTestBook(s.T(), s.testContainer)
-	addTestBookRelations(s.T(), s.testContainer)
+	err := prepareTestData(s.testContainer, "testdata/book_all_relations.sql")
+	s.Require().NoError(err, "failed to load test SQL file")
 
 	response, err := s.store.GetByID(ctx, bookID)
 	s.Require().NoError(err)
@@ -303,41 +304,6 @@ func prepareTestData(testContainer *postgres.PostgresContainer, fileName string)
 	}
 
 	return execSQL(testContainer, string(file))
-}
-
-func addTestBook(t *testing.T, testContainer *postgres.PostgresContainer) {
-	publisherStmt := `INSERT INTO ebook.publishers (id, name) VALUES (1, 'OReilly');`
-	languageStmt := `INSERT INTO ebook.languages (id, name) VALUES (1, 'English');`
-	bookStmt := `INSERT INTO ebook.books (id, title, subtitle, description, isbn10, isbn13, asin, pages, edition, 
-                 language_id, publisher_id, publisher_url, pub_date, book_file_name, book_file_size, cover_file_name)
-				 VALUES (1, 'CockroachDB', 'The Definitive Guide', 'Get the lowdown on CockroachDB', '1234567890',
-				 9781234567890, 'BH34567890', 256, 2, 1, 1, 'https://amazon.com/dp/1234567890.html', '2022-07-19', 
-				 'OReilly.CockroachDB.2nd.Edition.1234567890.zip', 5192, '1234567890.jpg');
-`
-	for _, stmt := range []string{publisherStmt, languageStmt, bookStmt} {
-		err := execSQL(testContainer, stmt)
-		require.NoError(t, err)
-	}
-}
-
-func addTestBookRelations(t *testing.T, testContainer *postgres.PostgresContainer) {
-	authorsStmt := `INSERT INTO ebook.authors (id, name) VALUES (1, 'John Doe'), (2, 'Amanda Lee');`
-	bookAuthorsStmt := `INSERT INTO ebook.book_author (book_id, author_id) VALUES (1, 1), (1, 2);`
-	categoriesStmt := `INSERT INTO ebook.categories (id, name, parent_id)
-					   VALUES (1, 'Computer Science', null), (2, 'Computers', 1), (3, 'Programming', 2);`
-	bookCategoriesStmt := `INSERT INTO ebook.book_category (book_id, category_id) VALUES (1, 1), (1, 2), (1, 3);`
-	fileTypesStmt := `INSERT INTO ebook.file_types (id, name) VALUES (1, 'pdf'), (2, 'epub');`
-	bookFileTypesStmt := `INSERT INTO ebook.book_file_type (book_id, file_type_id) VALUES (1, 1), (1, 2);`
-	tagsStmt := `INSERT INTO ebook.tags (id, name) VALUES (1, 'programming'), (2, 'database');`
-	bookTagsStmt := `INSERT INTO ebook.book_tag (book_id, tag_id) VALUES (1, 1), (1, 2);`
-
-	for _, stmt := range []string{
-		authorsStmt, bookAuthorsStmt, categoriesStmt, bookCategoriesStmt,
-		fileTypesStmt, bookFileTypesStmt, tagsStmt, bookTagsStmt,
-	} {
-		err := execSQL(testContainer, stmt)
-		require.NoError(t, err)
-	}
 }
 
 func execSQL(testContainer *postgres.PostgresContainer, statement string) error {
