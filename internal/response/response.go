@@ -35,9 +35,6 @@ func RenderJSONWithHeaders(w http.ResponseWriter, statusCode int, data any, head
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	_, err = w.Write(jsonData)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }

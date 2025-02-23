@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sdreger/lib-manager-go/internal/response"
+	"strings"
 )
 
 var (
@@ -21,4 +22,25 @@ func (e ValidationError) Error() string {
 
 func (e ValidationError) ToAPIError() response.APIError {
 	return response.APIError{Field: e.Field, Message: e.Message}
+}
+
+type ValidationErrors []ValidationError
+
+func (errors ValidationErrors) Error() string {
+	builder := strings.Builder{}
+	builder.WriteString("validation errors: [")
+	for _, err := range errors {
+		builder.WriteString(err.Error())
+	}
+	builder.WriteString("]")
+	return builder.String()
+}
+
+func (errors ValidationErrors) ToAPIErrors() []response.APIError {
+	apiErrors := make([]response.APIError, len(errors))
+	for i, err := range errors {
+		apiErrors[i] = err.ToAPIError()
+	}
+
+	return apiErrors
 }
