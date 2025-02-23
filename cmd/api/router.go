@@ -19,32 +19,55 @@ type Router struct {
 	mux         *http.ServeMux
 	logger      *slog.Logger
 	routesCount atomic.Int32
+	mw          []handlers.Middleware
 }
 
 func NewRouter(logger *slog.Logger, db *sqlx.DB) *Router {
-	router := Router{
-		mux:    http.NewServeMux(),
-		logger: logger,
-	}
-	router.RegisterHandlers(db)
+	router := new(Router).
+		WithMux(http.NewServeMux()).
+		WithLogger(logger)
+
+	router.registerHandlers(db)
 	logger.Info("router initialized", "registeredRoutes", router.routesCount.Load())
 
-	return &router
+	return router
+}
+
+func (router *Router) WithMux(mux *http.ServeMux) *Router {
+	router.mux = mux
+	return router
+}
+
+func (router *Router) WithLogger(logger *slog.Logger) *Router {
+	router.logger = logger
+	return router
+}
+
+func (router *Router) WithMiddleware(mw handlers.Middleware) *Router {
+	router.mw = append(router.mw, mw)
+	return router
 }
 
 func (router *Router) GetHandler() http.Handler {
 	return router.mux
 }
 
-func (router *Router) RegisterHandlers(db *sqlx.DB) {
+func (router *Router) registerHandlers(db *sqlx.DB) {
 	system.NewHandler(router.logger).RegisterHandler(router)
 	handlersV1.NewBookHandler(router.logger, db).RegisterHandler(router)
 }
 
-func (router *Router) RegisterRoute(method string, group string, path string, handler handlers.HTTPHandler) {
+func (router *Router) RegisterRoute(method string, group string, path string, handler handlers.HTTPHandler,
+	mw ...handlers.Middleware) {
+
+	// wrap handler specific middleware around handler being registered
+	handler = wrapMiddlewares(handler, mw...)
+
+	// add the application-wide middlewares
+	handler = wrapMiddlewares(handler, router.mw...)
+
 	h := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context() // to be able to inject values
-		// TODO: add middleware injection here
 		if err := handler(ctx, w, r); err != nil {
 			router.handleServerError(w, r, err)
 		}
@@ -54,6 +77,18 @@ func (router *Router) RegisterRoute(method string, group string, path string, ha
 
 	router.routesCount.Add(1)
 	router.mux.HandleFunc(pattern, h)
+}
+
+func wrapMiddlewares(handler handlers.HTTPHandler, middlewares ...handlers.Middleware) handlers.HTTPHandler {
+	// first middleware of the slice is the first to be executed
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		mw := middlewares[i]
+		if mw != nil {
+			handler = mw(handler)
+		}
+	}
+
+	return handler
 }
 
 func (router *Router) handleServerError(w http.ResponseWriter, r *http.Request, err error) {

@@ -7,6 +7,8 @@ import (
 
 type HTTPHandler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
+type Middleware func(handler HTTPHandler) HTTPHandler
+
 type RouteRegistrar interface {
-	RegisterRoute(method string, group string, path string, handler HTTPHandler)
+	RegisterRoute(method string, group string, path string, handler HTTPHandler, mw ...Middleware)
 }

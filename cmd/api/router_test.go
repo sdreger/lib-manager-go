@@ -6,12 +6,18 @@ import (
 	apiErrors "github.com/sdreger/lib-manager-go/cmd/api/errors"
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sync/atomic"
 	"testing"
+)
+
+const (
+	headerTestMiddleware = "X-Middleware"
 )
 
 func TestRouter_Handle(t *testing.T) {
@@ -19,7 +25,7 @@ func TestRouter_Handle(t *testing.T) {
 	testData := `{"data":"test"}`
 
 	r := NewRouter(logger, nil)
-	r.RegisterRoute(http.MethodGet, "/api/v1", "/group-test", getTestHandlerNoError(testData))
+	r.RegisterRoute(http.MethodGet, "/v1", "/group-test", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/no-group-test", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/error", getTestHandlerError())
 	r.RegisterRoute(http.MethodGet, "", "/not-found-error", getTestHandlerNotFoundError())
@@ -28,15 +34,76 @@ func TestRouter_Handle(t *testing.T) {
 
 	svr := httptest.NewServer(r.GetHandler())
 	defer svr.Close()
-	checkResultNoError(t, svr.Client(), svr.URL+"/api/v1/group-test", testData)
+	checkResultNoError(t, svr.Client(), svr.URL+"/v1/group-test", testData)
 	checkResultNoError(t, svr.Client(), svr.URL+"/no-group-test", testData)
 	checkResultError(t, svr.Client(), svr.URL+"/error")
 	checkResultNotFoundError(t, svr.Client(), svr.URL+"/not-found-error")
 	checkResultValidationError(t, svr.Client(), svr.URL+"/validation-error")
 	checkResultValidationErrors(t, svr.Client(), svr.URL+"/validation-errors")
 
-	manuallyRegisteredRoutesCount := int32(3)
+	var manuallyRegisteredRoutesCount int32 = 3
 	assert.GreaterOrEqual(t, r.routesCount.Load(), manuallyRegisteredRoutesCount)
+}
+
+func TestRouter_MiddlewareRegistration(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	testData := `{"data":"test"}`
+	applicationMiddleware, applicationMiddlewareCallsCount := getMockMiddleware("")
+	handlerMiddleware, handlerMiddlewareCallsCount := getMockMiddleware("")
+
+	r := NewRouter(logger, nil).WithMiddleware(applicationMiddleware)
+	r.RegisterRoute(http.MethodGet, "", "/no-handler-middleware", getTestHandlerNoError(testData))
+	r.RegisterRoute(http.MethodGet, "", "/handler-middleware", getTestHandlerNoError(testData), handlerMiddleware)
+
+	svr := httptest.NewServer(r.GetHandler())
+	defer svr.Close()
+	checkResultNoError(t, svr.Client(), svr.URL+"/no-handler-middleware", testData)
+	checkResultNoError(t, svr.Client(), svr.URL+"/handler-middleware", testData)
+
+	var manuallyRegisteredRoutesCount int32 = 2
+	var expectedApplicationMiddlewareCallsCount int32 = 2 // one call for each endpoint
+	var expectedHandlerMiddlewareCallsCount int32 = 1     // one call for one endpoint
+	require.GreaterOrEqual(t, r.routesCount.Load(), manuallyRegisteredRoutesCount)
+	require.Equal(t, expectedApplicationMiddlewareCallsCount, applicationMiddlewareCallsCount.Load())
+	require.Equal(t, expectedHandlerMiddlewareCallsCount, handlerMiddlewareCallsCount.Load())
+}
+
+func TestRouter_MiddlewareExecutionOrder(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	middleware01Name := "01"
+	middleware02Name := "02"
+	applicationMiddleware01, _ := getMockMiddleware(middleware01Name)
+	applicationMiddleware02, _ := getMockMiddleware(middleware02Name)
+
+	r := NewRouter(logger, nil).
+		WithMiddleware(applicationMiddleware02).
+		WithMiddleware(applicationMiddleware01)
+	r.RegisterRoute(http.MethodGet, "", "/middleware", getTestHandlerNoError(`{"data":"test"}`))
+
+	svr := httptest.NewServer(r.GetHandler())
+	defer svr.Close()
+
+	resp, err := svr.Client().Get(svr.URL + "/middleware")
+	if assert.NotNil(t, resp.Body) {
+		defer resp.Body.Close()
+	}
+	require.NoError(t, err, "should return response")
+	headerValues := resp.Header.Values(headerTestMiddleware)
+	require.Len(t, headerValues, 2)
+	require.Equal(t, middleware02Name, headerValues[0])
+	require.Equal(t, middleware01Name, headerValues[1])
+}
+
+func getMockMiddleware(name string) (handlers.Middleware, *atomic.Int32) {
+	var callsCount atomic.Int32
+	return func(next handlers.HTTPHandler) handlers.HTTPHandler {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			callsCount.Add(1)
+
+			w.Header().Add(headerTestMiddleware, name)
+			return next(ctx, w, r)
+		}
+	}, &callsCount
 }
 
 func getTestHandlerNoError(testData string) handlers.HTTPHandler {

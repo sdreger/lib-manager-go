@@ -10,7 +10,9 @@ type RouteRegistrarMock struct {
 	handlerPatternToFunctionsMap map[string]string
 }
 
-func (r *RouteRegistrarMock) RegisterRoute(method string, group string, path string, handler HTTPHandler) {
+func (r *RouteRegistrarMock) RegisterRoute(method string, group string, path string, handler HTTPHandler,
+	mw ...Middleware) {
+
 	if r.handlerPatternToFunctionsMap == nil {
 		r.handlerPatternToFunctionsMap = make(map[string]string)
 	}
