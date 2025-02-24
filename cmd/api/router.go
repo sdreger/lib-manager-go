@@ -8,6 +8,7 @@ import (
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers"
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers/system"
 	handlersV1 "github.com/sdreger/lib-manager-go/cmd/api/handlers/v1"
+	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/sdreger/lib-manager-go/internal/response"
 	"log/slog"
 	"net/http"
@@ -22,41 +23,43 @@ type Router struct {
 	mw          []handlers.Middleware
 }
 
-func NewRouter(logger *slog.Logger, db *sqlx.DB) *Router {
-	router := new(Router).
-		WithMux(http.NewServeMux()).
-		WithLogger(logger)
+func NewRouter(logger *slog.Logger, db *sqlx.DB, httpConfig config.HTTPConfig) *Router {
+	router := Router{
+		mux:         http.NewServeMux(),
+		logger:      logger,
+		routesCount: atomic.Int32{},
+		mw:          []handlers.Middleware{},
+	}
 
+	router.registerApplicationMiddlewares(httpConfig)
 	router.registerHandlers(db)
 	logger.Info("router initialized", "registeredRoutes", router.routesCount.Load())
 
-	return router
-}
-
-func (router *Router) WithMux(mux *http.ServeMux) *Router {
-	router.mux = mux
-	return router
-}
-
-func (router *Router) WithLogger(logger *slog.Logger) *Router {
-	router.logger = logger
-	return router
-}
-
-func (router *Router) WithMiddleware(mw handlers.Middleware) *Router {
-	router.mw = append(router.mw, mw)
-	return router
+	return &router
 }
 
 func (router *Router) GetHandler() http.Handler {
 	return router.mux
 }
 
+// registerApplicationMiddlewares - register application-wide middlewares.
+// Those will be executed first for all endpoints, before handler-specific middlewares
+func (router *Router) registerApplicationMiddlewares(httpConfig config.HTTPConfig) {
+	// the order matters, first registered - first executed
+}
+
+// registerHandlers - register all handlers, and delegate route registration to them
 func (router *Router) registerHandlers(db *sqlx.DB) {
 	system.NewHandler(router.logger).RegisterHandler(router)
 	handlersV1.NewBookHandler(router.logger, db).RegisterHandler(router)
 }
 
+func (router *Router) AddApplicationMiddleware(mw handlers.Middleware) {
+	router.mw = append(router.mw, mw)
+}
+
+// RegisterRoute - registers an endpoint. The endpoint group is optional.
+// Handler-specific middlewares order matters, first passed - first executed
 func (router *Router) RegisterRoute(method string, group string, path string, handler handlers.HTTPHandler,
 	mw ...handlers.Middleware) {
 
@@ -68,6 +71,7 @@ func (router *Router) RegisterRoute(method string, group string, path string, ha
 
 	h := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context() // to be able to inject values
+
 		if err := handler(ctx, w, r); err != nil {
 			router.handleServerError(w, r, err)
 		}

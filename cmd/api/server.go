@@ -20,7 +20,7 @@ func NewServerApp(config config.AppConfig, logger *slog.Logger, db *sqlx.DB) *Se
 	return &ServerApp{
 		config: config,
 		logger: logger,
-		router: NewRouter(logger, db),
+		router: NewRouter(logger, db, config.HTTP),
 	}
 }
 

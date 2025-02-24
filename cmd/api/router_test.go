@@ -5,6 +5,7 @@ import (
 	"errors"
 	apiErrors "github.com/sdreger/lib-manager-go/cmd/api/errors"
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers"
+	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -24,7 +25,7 @@ func TestRouter_Handle(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	testData := `{"data":"test"}`
 
-	r := NewRouter(logger, nil)
+	r := NewRouter(logger, nil, config.HTTPConfig{})
 	r.RegisterRoute(http.MethodGet, "/v1", "/group-test", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/no-group-test", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/error", getTestHandlerError())
@@ -48,10 +49,11 @@ func TestRouter_Handle(t *testing.T) {
 func TestRouter_MiddlewareRegistration(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	testData := `{"data":"test"}`
-	applicationMiddleware, applicationMiddlewareCallsCount := getMockMiddleware("")
-	handlerMiddleware, handlerMiddlewareCallsCount := getMockMiddleware("")
+	applicationMiddleware, applicationMiddlewareCallsCount := getMockMiddleware("applicationWideMiddleware")
+	handlerMiddleware, handlerMiddlewareCallsCount := getMockMiddleware("handlerSpecificMiddleware")
 
-	r := NewRouter(logger, nil).WithMiddleware(applicationMiddleware)
+	r := NewRouter(logger, nil, config.HTTPConfig{})
+	r.AddApplicationMiddleware(applicationMiddleware)
 	r.RegisterRoute(http.MethodGet, "", "/no-handler-middleware", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/handler-middleware", getTestHandlerNoError(testData), handlerMiddleware)
 
@@ -75,9 +77,9 @@ func TestRouter_MiddlewareExecutionOrder(t *testing.T) {
 	applicationMiddleware01, _ := getMockMiddleware(middleware01Name)
 	applicationMiddleware02, _ := getMockMiddleware(middleware02Name)
 
-	r := NewRouter(logger, nil).
-		WithMiddleware(applicationMiddleware02).
-		WithMiddleware(applicationMiddleware01)
+	r := NewRouter(logger, nil, config.HTTPConfig{})
+	r.AddApplicationMiddleware(applicationMiddleware02)
+	r.AddApplicationMiddleware(applicationMiddleware01)
 	r.RegisterRoute(http.MethodGet, "", "/middleware", getTestHandlerNoError(`{"data":"test"}`))
 
 	svr := httptest.NewServer(r.GetHandler())
