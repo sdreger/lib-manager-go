@@ -9,6 +9,7 @@ import (
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers/system"
 	handlersV1 "github.com/sdreger/lib-manager-go/cmd/api/handlers/v1"
 	"github.com/sdreger/lib-manager-go/internal/config"
+	"github.com/sdreger/lib-manager-go/internal/middleware"
 	"github.com/sdreger/lib-manager-go/internal/response"
 	"log/slog"
 	"net/http"
@@ -46,6 +47,7 @@ func (router *Router) GetHandler() http.Handler {
 // Those will be executed first for all endpoints, before handler-specific middlewares
 func (router *Router) registerApplicationMiddlewares(httpConfig config.HTTPConfig) {
 	// the order matters, first registered - first executed
+	router.AddApplicationMiddleware(middleware.Cors(httpConfig))
 }
 
 // registerHandlers - register all handlers, and delegate route registration to them
