@@ -16,6 +16,11 @@ type HTTPConfig struct {
 	WriteTimeout    time.Duration `env:"WRITE_TIMEOUT" envDefault:"10s"`
 	IdleTimeout     time.Duration `env:"IDLE_TIMEOUT" envDefault:"120s"`
 	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"20s"`
+	CORS            struct {
+		AllowedOrigins []string `env:"ALLOWED_ORIGINS"`
+		AllowedMethods []string `env:"ALLOWED_METHODS"`
+		AllowedHeaders []string `env:"ALLOWED_HEADERS"`
+	} `envPrefix:"CORS_"`
 }
 
 type DBConfig struct {

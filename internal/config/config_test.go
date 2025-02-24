@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -44,6 +45,10 @@ func TestNewConfigDefaults(t *testing.T) {
 			assert.Equal(t, defaultHTTPWriteTimeout, config.HTTP.WriteTimeout)
 			assert.Equal(t, defaultHTTPIdleTimeout, config.HTTP.IdleTimeout)
 			assert.Equal(t, defaultHTTPShutdownTimeout, config.HTTP.ShutdownTimeout)
+
+			assert.Empty(t, config.HTTP.CORS.AllowedOrigins)
+			assert.Empty(t, config.HTTP.CORS.AllowedMethods)
+			assert.Empty(t, config.HTTP.CORS.AllowedHeaders)
 		}
 
 		if assert.NotEmpty(t, config.DB, "DB config should not be empty") {
@@ -70,12 +75,18 @@ func TestNewConfigCustomHTTPEnv(t *testing.T) {
 	customWriteTimeout, _ := time.ParseDuration("5s")
 	customIdleTimeout, _ := time.ParseDuration("20s")
 	customShutdownTimeout, _ := time.ParseDuration("30s")
+	customAllowedOrigins := []string{"https://example.com", "http://127.0.0.1:3000"}
+	customAllowedMethods := []string{"GET", "POST"}
+	customAllowedHeaders := []string{"Content-Type", "X-Test-Header"}
 	_ = os.Setenv(getEnvKey("HTTP_HOST"), customHost)
 	_ = os.Setenv(getEnvKey("HTTP_PORT"), strconv.Itoa(customPort))
 	_ = os.Setenv(getEnvKey("HTTP_READ_TIMEOUT"), customReadTimeout.String())
 	_ = os.Setenv(getEnvKey("HTTP_WRITE_TIMEOUT"), customWriteTimeout.String())
 	_ = os.Setenv(getEnvKey("HTTP_IDLE_TIMEOUT"), customIdleTimeout.String())
 	_ = os.Setenv(getEnvKey("HTTP_SHUTDOWN_TIMEOUT"), customShutdownTimeout.String())
+	_ = os.Setenv(getEnvKey("HTTP_CORS_ALLOWED_ORIGINS"), strings.Join(customAllowedOrigins, ","))
+	_ = os.Setenv(getEnvKey("HTTP_CORS_ALLOWED_METHODS"), strings.Join(customAllowedMethods, ","))
+	_ = os.Setenv(getEnvKey("HTTP_CORS_ALLOWED_HEADERS"), strings.Join(customAllowedHeaders, ","))
 
 	config, err := New()
 	if assert.NoError(t, err, "should parse custom config") {
@@ -86,6 +97,10 @@ func TestNewConfigCustomHTTPEnv(t *testing.T) {
 		assert.Equal(t, customWriteTimeout, config.HTTP.WriteTimeout)
 		assert.Equal(t, customIdleTimeout, config.HTTP.IdleTimeout)
 		assert.Equal(t, customShutdownTimeout, config.HTTP.ShutdownTimeout)
+
+		assert.Equal(t, customAllowedOrigins, config.HTTP.CORS.AllowedOrigins)
+		assert.Equal(t, customAllowedMethods, config.HTTP.CORS.AllowedMethods)
+		assert.Equal(t, customAllowedHeaders, config.HTTP.CORS.AllowedHeaders)
 	}
 }
 
