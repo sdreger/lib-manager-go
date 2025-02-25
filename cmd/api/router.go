@@ -42,11 +42,13 @@ func (router *Router) GetHandler() http.Handler {
 }
 
 // registerApplicationMiddlewares - register application-wide middlewares.
-// Those will be executed first for all registered endpoints, before handler-specific middlewares
+// Those will be executed first for all registered endpoints, before handler-specific middlewares, and handler itself
+// [appMiddleware] -> ... -> [appMiddleware] -> [handlerMiddleware] -> ... -> [handlerMiddleware] -> [handler]
 func (router *Router) registerApplicationMiddlewares() {
 	// the order matters, first registered - first executed
 	router.AddApplicationMiddleware(middleware.Cors(router.httpConfig))
 	router.AddApplicationMiddleware(middleware.Errors(router.logger))
+	router.AddApplicationMiddleware(middleware.Panics())
 }
 
 // registerHandlers - register all handlers, and delegate route registration to them
