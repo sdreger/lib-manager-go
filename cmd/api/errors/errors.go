@@ -29,8 +29,11 @@ type ValidationErrors []ValidationError
 func (errors ValidationErrors) Error() string {
 	builder := strings.Builder{}
 	builder.WriteString("validation errors: [")
-	for _, err := range errors {
+	for i, err := range errors {
 		builder.WriteString(err.Error())
+		if i != len(errors)-1 {
+			builder.WriteString("; ")
+		}
 	}
 	builder.WriteString("]")
 	return builder.String()
