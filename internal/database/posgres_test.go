@@ -105,6 +105,8 @@ func TestCannotPingDBConnection(t *testing.T) {
 	appConfig, err := config.New()
 	require.NoError(t, err, "error loading config")
 	dbConfig := appConfig.DB
+	dbConfig.User = "unknown"
+	dbConfig.Password = "unknown"
 
 	conn, err := Open(dbConfig)
 	require.Error(t, err, "should not be able to open postgres connection")
