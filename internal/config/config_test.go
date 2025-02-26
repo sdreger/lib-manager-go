@@ -32,6 +32,12 @@ var (
 	defaultDBSSLMode   = "disable"
 	defaultDBTimezone  = "UTC"
 	defaultAutoMigrate = false
+
+	defaultBlobStoreBookCoverBucket      = "ebook-covers"
+	defaultBlobStoreMinioEndpoint        = "127.0.0.1:9000"
+	defaultBlobStoreMinioAccessKeyID     = "minio-access-key"
+	defaultBlobStoreMinioSecretAccessKey = "minio-secret-key"
+	defaultBlobStoreMinioUseSSL          = false
 )
 
 func TestNewConfigDefaults(t *testing.T) {
@@ -64,6 +70,14 @@ func TestNewConfigDefaults(t *testing.T) {
 			assert.Equal(t, defaultDBSSLMode, config.DB.SSLMode)
 			assert.Equal(t, defaultDBTimezone, config.DB.Timezone)
 			assert.Equal(t, defaultAutoMigrate, config.DB.AutoMigrate)
+		}
+
+		if assert.NotEmpty(t, config.BLOBStore, "BLOBStore config should not be empty") {
+			assert.Equal(t, defaultBlobStoreBookCoverBucket, config.BLOBStore.BookCoverBucket)
+			assert.Equal(t, defaultBlobStoreMinioEndpoint, config.BLOBStore.MinioEndpoint)
+			assert.Equal(t, defaultBlobStoreMinioAccessKeyID, config.BLOBStore.MinioAccessKeyID)
+			assert.Equal(t, defaultBlobStoreMinioSecretAccessKey, config.BLOBStore.MinioSecretAccessKey)
+			assert.Equal(t, defaultBlobStoreMinioUseSSL, config.BLOBStore.MinioUseSSL)
 		}
 	}
 }
@@ -149,6 +163,30 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 	}
 }
 
+func TestNewConfigCustomBLOBStoreEnv(t *testing.T) {
+	customBlobStoreBookCoverBucket := "custom-ebook-covers"
+	customBlobStoreMinioEndpoint := "192.168.0.10:9000"
+	customBlobStoreMinioAccessKeyID := "custom-minio-access-key"
+	customBlobStoreMinioSecretAccessKey := "custom-minio-secret-key"
+	customBlobStoreMinioUseSSL := true
+
+	_ = os.Setenv(getEnvKey("BLOB_STORE_BOOK_COVER_BUCKET"), customBlobStoreBookCoverBucket)
+	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ENDPOINT"), customBlobStoreMinioEndpoint)
+	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"), customBlobStoreMinioAccessKeyID)
+	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"), customBlobStoreMinioSecretAccessKey)
+	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"), strconv.FormatBool(customBlobStoreMinioUseSSL))
+
+	config, err := New()
+	if assert.NoError(t, err, "should parse custom config") {
+		assert.NotEmpty(t, config, "config should not be empty")
+		assert.Equal(t, customBlobStoreBookCoverBucket, config.BLOBStore.BookCoverBucket)
+		assert.Equal(t, customBlobStoreMinioEndpoint, config.BLOBStore.MinioEndpoint)
+		assert.Equal(t, customBlobStoreMinioAccessKeyID, config.BLOBStore.MinioAccessKeyID)
+		assert.Equal(t, customBlobStoreMinioSecretAccessKey, config.BLOBStore.MinioSecretAccessKey)
+		assert.Equal(t, customBlobStoreMinioUseSSL, config.BLOBStore.MinioUseSSL)
+	}
+}
+
 func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("HTTP_HOST"), "")
 	_ = os.Setenv(getEnvKey("HTTP_PORT"), "")
@@ -169,6 +207,12 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("DB_SSL_MODE"), "")
 	_ = os.Setenv(getEnvKey("DB_TIMEZONE"), "")
 	_ = os.Setenv(getEnvKey("DB_AUTO_MIGRATE"), "")
+
+	_ = os.Setenv(getEnvKey("BLOB_STORE_BOOK_COVER_BUCKET"), "")
+	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ENDPOINT"), "")
+	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"), "")
+	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"), "")
+	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"), "")
 
 	config, err := New()
 	if assert.NoError(t, err, "should parse default config") {
@@ -194,6 +238,14 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 			assert.Equal(t, defaultDBSSLMode, config.DB.SSLMode)
 			assert.Equal(t, defaultDBTimezone, config.DB.Timezone)
 			assert.Equal(t, defaultAutoMigrate, config.DB.AutoMigrate)
+		}
+
+		if assert.NotEmpty(t, config.BLOBStore, "BLOBStore config should not be empty") {
+			assert.Equal(t, defaultBlobStoreBookCoverBucket, config.BLOBStore.BookCoverBucket)
+			assert.Equal(t, defaultBlobStoreMinioEndpoint, config.BLOBStore.MinioEndpoint)
+			assert.Equal(t, defaultBlobStoreMinioAccessKeyID, config.BLOBStore.MinioAccessKeyID)
+			assert.Equal(t, defaultBlobStoreMinioSecretAccessKey, config.BLOBStore.MinioSecretAccessKey)
+			assert.Equal(t, defaultBlobStoreMinioUseSSL, config.BLOBStore.MinioUseSSL)
 		}
 	}
 }

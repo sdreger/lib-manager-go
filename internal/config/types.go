@@ -3,8 +3,9 @@ package config
 import "time"
 
 type AppConfig struct {
-	HTTP HTTPConfig `envPrefix:"HTTP_"`
-	DB   DBConfig   `envPrefix:"DB_"`
+	HTTP      HTTPConfig      `envPrefix:"HTTP_"`
+	DB        DBConfig        `envPrefix:"DB_"`
+	BLOBStore BLOBStoreConfig `envPrefix:"BLOB_STORE_"`
 
 	BuildInfo BuildInfo
 }
@@ -36,6 +37,14 @@ type DBConfig struct {
 	SSLMode     string `env:"SSL_MODE" envDefault:"disable"`
 	Timezone    string `env:"TIMEZONE" envDefault:"UTC"`
 	AutoMigrate bool   `env:"AUTO_MIGRATE" envDefault:"false"`
+}
+
+type BLOBStoreConfig struct {
+	BookCoverBucket      string `env:"BOOK_COVER_BUCKET" envDefault:"ebook-covers"`
+	MinioEndpoint        string `env:"MINIO_ENDPOINT" envDefault:"127.0.0.1:9000"`
+	MinioAccessKeyID     string `env:"MINIO_ACCESS_KEY_ID" envDefault:"minio-access-key"`
+	MinioSecretAccessKey string `env:"MINIO_ACCESS_SECRET_KEY" envDefault:"minio-secret-key"`
+	MinioUseSSL          bool   `env:"MINIO_USE_SSL" envDefault:"false"`
 }
 
 type BuildInfo struct {
