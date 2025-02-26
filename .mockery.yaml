@@ -11,9 +11,12 @@ mockname: "Mock{{.InterfaceName}}"
 outpkg: "{{.PackageName}}"
 inpackage: True
 packages:
-  github.com/sdreger/lib-manager-go/internal/domain/book:
-    interfaces:
-      Store:
   github.com/sdreger/lib-manager-go/cmd/api/handlers/v1:
     interfaces:
       BookService:
+  github.com/sdreger/lib-manager-go/internal/domain/book:
+    interfaces:
+      Store:
+  github.com/sdreger/lib-manager-go/internal/domain/cover:
+    interfaces:
+      BlobStore:
