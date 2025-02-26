@@ -14,6 +14,7 @@ packages:
   github.com/sdreger/lib-manager-go/cmd/api/handlers/v1:
     interfaces:
       BookService:
+      CoverService:
   github.com/sdreger/lib-manager-go/internal/domain/book:
     interfaces:
       Store:

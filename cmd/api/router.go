@@ -6,6 +6,7 @@ import (
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers"
 	"github.com/sdreger/lib-manager-go/cmd/api/handlers/system"
 	handlersV1 "github.com/sdreger/lib-manager-go/cmd/api/handlers/v1"
+	"github.com/sdreger/lib-manager-go/internal/blobtstore"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/sdreger/lib-manager-go/internal/middleware"
 	"log/slog"
@@ -21,7 +22,9 @@ type Router struct {
 	mw          []handlers.Middleware
 }
 
-func NewRouter(logger *slog.Logger, db *sqlx.DB, httpConfig config.HTTPConfig) *Router {
+func NewRouter(logger *slog.Logger, db *sqlx.DB, blobStore *blobtstore.MinioStore,
+	httpConfig config.HTTPConfig) *Router {
+
 	router := Router{
 		mux:         http.NewServeMux(),
 		logger:      logger,
@@ -31,7 +34,7 @@ func NewRouter(logger *slog.Logger, db *sqlx.DB, httpConfig config.HTTPConfig) *
 	}
 
 	router.registerApplicationMiddlewares()
-	router.registerHandlers(db)
+	router.registerHandlers(db, blobStore)
 	logger.Info("router initialized", "registeredRoutes", router.routesCount.Load())
 
 	return &router
@@ -52,9 +55,10 @@ func (router *Router) registerApplicationMiddlewares() {
 }
 
 // registerHandlers - register all handlers, and delegate route registration to them
-func (router *Router) registerHandlers(db *sqlx.DB) {
+func (router *Router) registerHandlers(db *sqlx.DB, blobStore *blobtstore.MinioStore) {
 	system.NewHandler(router.logger).RegisterHandler(router)
 	handlersV1.NewBookHandler(router.logger, db).RegisterHandler(router)
+	handlersV1.NewCoverHandler(router.logger, blobStore).RegisterHandler(router)
 }
 
 func (router *Router) AddApplicationMiddleware(mw handlers.Middleware) {

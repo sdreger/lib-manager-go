@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/sdreger/lib-manager-go/internal/blobtstore"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/sdreger/lib-manager-go/internal/database"
 	"log/slog"
@@ -67,8 +68,21 @@ func run(logger *slog.Logger) (err error) {
 		return err
 	}
 
+	// ==================== Init BLOB store ====================
+	blobStore, err := blobtstore.NewMinioStore(logger, appConfig.BLOBStore)
+	if err != nil {
+		return err
+	}
+	logger.Info("BLOB store client initialized", "endpoint", appConfig.BLOBStore.MinioEndpoint)
+
+	// ==================== Create BLOB storage buckets ====================
+	err = blobStore.CreateBuckets(mainCtx)
+	if err != nil {
+		return err
+	}
+
 	// ==================== Start HTTP Server ====================
-	if serverAppErr := NewServerApp(appConfig, logger, db).Serve(mainCtx); serverAppErr != nil {
+	if serverAppErr := NewServerApp(appConfig, logger, db, blobStore).Serve(mainCtx); serverAppErr != nil {
 		return serverAppErr
 	}
 

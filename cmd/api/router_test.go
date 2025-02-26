@@ -24,7 +24,7 @@ func TestRouter_Handle(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	testData := `{"data":"test"}`
 
-	r := NewRouter(logger, nil, config.HTTPConfig{})
+	r := NewRouter(logger, nil, nil, config.HTTPConfig{})
 	clear(r.mw) // disable all application-wide middlewares
 	r.RegisterRoute(http.MethodGet, "/v1", "/group-test", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/no-group-test", getTestHandlerNoError(testData))
@@ -46,7 +46,7 @@ func TestRouter_MiddlewareRegistration(t *testing.T) {
 	applicationMiddleware, applicationMiddlewareCallsCount := getMockMiddleware("applicationWideMiddleware")
 	handlerMiddleware, handlerMiddlewareCallsCount := getMockMiddleware("handlerSpecificMiddleware")
 
-	r := NewRouter(logger, nil, config.HTTPConfig{})
+	r := NewRouter(logger, nil, nil, config.HTTPConfig{})
 	r.AddApplicationMiddleware(applicationMiddleware)
 	r.RegisterRoute(http.MethodGet, "", "/no-handler-middleware", getTestHandlerNoError(testData))
 	r.RegisterRoute(http.MethodGet, "", "/handler-middleware", getTestHandlerNoError(testData), handlerMiddleware)
@@ -71,7 +71,7 @@ func TestRouter_MiddlewareExecutionOrder(t *testing.T) {
 	applicationMiddleware01, _ := getMockMiddleware(middleware01Name)
 	applicationMiddleware02, _ := getMockMiddleware(middleware02Name)
 
-	r := NewRouter(logger, nil, config.HTTPConfig{})
+	r := NewRouter(logger, nil, nil, config.HTTPConfig{})
 	r.AddApplicationMiddleware(applicationMiddleware02)
 	r.AddApplicationMiddleware(applicationMiddleware01)
 	r.RegisterRoute(http.MethodGet, "", "/middleware", getTestHandlerNoError(`{"data":"test"}`))

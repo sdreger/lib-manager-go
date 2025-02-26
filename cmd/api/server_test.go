@@ -25,7 +25,7 @@ func TestServerApp_ServeAndShutdown(t *testing.T) {
 	appConfig, err := config.New()
 	if assert.NoError(t, err, "should create a new default config") {
 		appConfig.HTTP.Port = randomServerPort
-		serverApp := NewServerApp(appConfig, logger, nil)
+		serverApp := NewServerApp(appConfig, logger, nil, nil)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
