@@ -8,19 +8,19 @@ import (
 	"net/http"
 )
 
-type Handler struct {
+type Controller struct {
 	logger *slog.Logger
 }
 
-func NewHandler(logger *slog.Logger) *Handler {
-	return &Handler{logger: logger}
+func NewController(logger *slog.Logger) *Controller {
+	return &Controller{logger: logger}
 }
 
-func (h *Handler) RegisterHandler(registrar handlers.RouteRegistrar) {
-	registrar.RegisterRoute(http.MethodGet, "", "/health", h.HealthProbe)
+func (cnt *Controller) RegisterRoutes(registrar handlers.RouteRegistrar) {
+	registrar.RegisterRoute(http.MethodGet, "", "/health", cnt.HealthProbe)
 }
 
-func (h *Handler) HealthProbe(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
+func (cnt *Controller) HealthProbe(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
 	defer func() {
 		if req.Body != nil {
 			req.Body.Close()

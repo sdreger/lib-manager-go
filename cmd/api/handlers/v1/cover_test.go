@@ -22,7 +22,7 @@ func TestCoverHandler_RegisterCoverHandler(t *testing.T) {
 
 	testRegistrar := handlers.RouteRegistrarMock{}
 	h := getCoverHandler()
-	h.RegisterHandler(&testRegistrar)
+	h.RegisterRoutes(&testRegistrar)
 
 	assert.True(t, testRegistrar.IsRouteRegistered("GET /v1/covers/{publisherName}/{coverFileName}", h.GetBookCover))
 }
@@ -87,11 +87,11 @@ func TestCoverHandler_GetCover_Error(t *testing.T) {
 	assert.ErrorIs(t, err, expectedError)
 }
 
-func getCoverHandler() *CoverHandler {
+func getCoverHandler() *CoverController {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
-	return NewCoverHandler(logger, nil)
+	return NewCoverController(logger, nil)
 }
 
-func injectCoverMocks(service *CoverHandler, coverService *MockCoverService) {
+func injectCoverMocks(service *CoverController, coverService *MockCoverService) {
 	service.coverService = coverService
 }

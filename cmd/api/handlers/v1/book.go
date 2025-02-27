@@ -24,22 +24,21 @@ type BookService interface {
 	) (paging.Page[book.LookupItem], error)
 }
 
-type BookHandler struct {
+type BookController struct {
 	logger      *slog.Logger
 	bookService BookService
 }
 
-func NewBookHandler(logger *slog.Logger, db *sqlx.DB) *BookHandler {
-	return &BookHandler{logger: logger, bookService: book.NewService(logger, db)}
+func NewBookController(logger *slog.Logger, db *sqlx.DB) *BookController {
+	return &BookController{logger: logger, bookService: book.NewService(logger, db)}
 }
 
-func (bh *BookHandler) RegisterHandler(registrar handlers.RouteRegistrar) {
-	group := "/v1"
-	registrar.RegisterRoute(http.MethodGet, group, "/books", bh.GetBooks)
-	registrar.RegisterRoute(http.MethodGet, group, "/books/{bookID}", bh.GetBook)
+func (cnt *BookController) RegisterRoutes(registrar handlers.RouteRegistrar) {
+	registrar.RegisterRoute(http.MethodGet, group, "/books", cnt.GetBooks)
+	registrar.RegisterRoute(http.MethodGet, group, "/books/{bookID}", cnt.GetBook)
 }
 
-func (bh *BookHandler) GetBook(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (cnt *BookController) GetBook(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	idString := r.PathValue("bookID")
 	idInt, err := strconv.Atoi(idString)
 	if err != nil {
@@ -49,7 +48,7 @@ func (bh *BookHandler) GetBook(ctx context.Context, w http.ResponseWriter, r *ht
 		}
 	}
 
-	bookEntry, err := bh.bookService.GetBookByID(ctx, int64(idInt))
+	bookEntry, err := cnt.bookService.GetBookByID(ctx, int64(idInt))
 	if errors.Is(err, book.ErrNotFound) {
 		return apiErrors.ErrNotFound
 	}
@@ -60,7 +59,7 @@ func (bh *BookHandler) GetBook(ctx context.Context, w http.ResponseWriter, r *ht
 	return response.RenderDataJSON(w, http.StatusOK, bookEntry)
 }
 
-func (bh *BookHandler) GetBooks(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (cnt *BookController) GetBooks(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	page, pageErr := paging.NewPageRequest(r.URL.Query())
 	if pageErr != nil {
 		return pageErr
@@ -76,7 +75,7 @@ func (bh *BookHandler) GetBooks(ctx context.Context, w http.ResponseWriter, r *h
 		return filterErr
 	}
 
-	bookPage, err := bh.bookService.GetBooks(ctx, page, sort, filter)
+	bookPage, err := cnt.bookService.GetBooks(ctx, page, sort, filter)
 	if err != nil {
 		return err
 	}

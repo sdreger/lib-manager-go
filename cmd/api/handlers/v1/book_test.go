@@ -58,32 +58,30 @@ const (
 	bookTag02         = "database"
 )
 
-func TestBookHandler_RegisterBookHandler(t *testing.T) {
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
+func TestBookController_RegisterRoutes(t *testing.T) {
 	testRegistrar := handlers.RouteRegistrarMock{}
-	h := NewBookHandler(logger, nil)
-	h.RegisterHandler(&testRegistrar)
+	cnt := getBookController()
+	cnt.RegisterRoutes(&testRegistrar)
 
-	assert.True(t, testRegistrar.IsRouteRegistered("GET /v1/books", h.GetBooks))
-	assert.True(t, testRegistrar.IsRouteRegistered("GET /v1/books/{bookID}", h.GetBook))
+	assert.True(t, testRegistrar.IsRouteRegistered("GET /v1/books", cnt.GetBooks))
+	assert.True(t, testRegistrar.IsRouteRegistered("GET /v1/books/{bookID}", cnt.GetBook))
 }
 
-func TestBookHandler_GetBook_Success(t *testing.T) {
+func TestBookController_GetBook_Success(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	testBook := getTestBook()
 
 	mockService := NewMockBookService(t)
 	testBookID := int64(1)
 	mockService.EXPECT().GetBookByID(ctx, testBookID).Return(testBook, nil)
-	injectBookMocks(handler, mockService)
+	injectBookMocks(controller, mockService)
 
 	request := httptest.NewRequest("GET", "/v1/books/1", nil)
 	request.SetPathValue("bookID", strconv.Itoa(int(testBookID)))
 	recorder := httptest.NewRecorder()
-	err := handler.GetBook(ctx, recorder, request)
+	err := controller.GetBook(ctx, recorder, request)
 	require.NoError(t, err, "should get a book")
 
 	result := recorder.Result()
@@ -97,56 +95,56 @@ func TestBookHandler_GetBook_Success(t *testing.T) {
 	assert.Equal(t, testBook, bookJSON["data"], "body should match")
 }
 
-func TestBookHandler_GetBook_Not_Found(t *testing.T) {
+func TestBookController_GetBook_Not_Found(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	mockService := NewMockBookService(t)
 	testBookID := int64(1)
 	mockService.EXPECT().GetBookByID(ctx, testBookID).Return(book.Book{}, book.ErrNotFound)
-	injectBookMocks(handler, mockService)
+	injectBookMocks(controller, mockService)
 
 	request := httptest.NewRequest("GET", "/v1/books/1", nil)
 	request.SetPathValue("bookID", strconv.Itoa(int(testBookID)))
 	recorder := httptest.NewRecorder()
-	err := handler.GetBook(ctx, recorder, request)
+	err := controller.GetBook(ctx, recorder, request)
 	require.Error(t, err, "should get not found error")
 	assert.ErrorIs(t, err, apiErrors.ErrNotFound, "should not found book by id")
 }
 
-func TestBookHandler_GetBook_InvalidBookID(t *testing.T) {
+func TestBookController_GetBook_InvalidBookID(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	request := httptest.NewRequest("GET", "/v1/books/one", nil)
 	request.SetPathValue("bookID", "one")
 	recorder := httptest.NewRecorder()
-	err := handler.GetBook(ctx, recorder, request)
+	err := controller.GetBook(ctx, recorder, request)
 	require.Error(t, err, "should not get a book")
 	assert.ErrorAs(t, err, &apiErrors.ValidationError{}, "should get a validation error")
 }
 
-func TestBookHandler_GetBook_ServiceError(t *testing.T) {
+func TestBookController_GetBook_ServiceError(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	mockService := NewMockBookService(t)
 	testBookID := int64(1)
 	serviceError := errors.New("service error")
 	mockService.EXPECT().GetBookByID(ctx, testBookID).Return(book.Book{}, serviceError)
-	injectBookMocks(handler, mockService)
+	injectBookMocks(controller, mockService)
 
 	request := httptest.NewRequest("GET", "/v1/books/1", nil)
 	request.SetPathValue("bookID", strconv.Itoa(int(testBookID)))
 	recorder := httptest.NewRecorder()
-	err := handler.GetBook(ctx, recorder, request)
+	err := controller.GetBook(ctx, recorder, request)
 	require.Error(t, err, "should not get a book")
 	assert.ErrorIs(t, err, serviceError, "should get service error")
 }
 
-func TestBookHandler_GetBooks(t *testing.T) {
+func TestBookController_GetBooks(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	pageNumber := "1"
 	pageSize := "100"
@@ -159,11 +157,11 @@ func TestBookHandler_GetBooks(t *testing.T) {
 
 	mockService := NewMockBookService(t)
 	mockService.EXPECT().GetBooks(ctx, mock.Anything, mock.Anything, mock.Anything).Return(page, nil)
-	injectBookMocks(handler, mockService)
+	injectBookMocks(controller, mockService)
 
 	request := httptest.NewRequest("GET", "/v1/books?page=1&size=10&sort=id,ASC&tag=1&author=1", nil)
 	recorder := httptest.NewRecorder()
-	err := handler.GetBooks(ctx, recorder, request)
+	err := controller.GetBooks(ctx, recorder, request)
 	require.NoError(t, err, "should get a page of books")
 
 	result := recorder.Result()
@@ -183,62 +181,62 @@ func TestBookHandler_GetBooks(t *testing.T) {
 	assert.Equal(t, lookupItem, pageData.Content[0], "lookup item content should match")
 }
 
-func TestBookHandler_GetBooks_ServiceError(t *testing.T) {
+func TestBookController_GetBooks_ServiceError(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	response := paging.Page[book.LookupItem]{}
 	serviceError := errors.New("service error")
 	mockService := NewMockBookService(t)
 	mockService.EXPECT().GetBooks(ctx, mock.Anything, mock.Anything, mock.Anything).Return(response, serviceError)
-	injectBookMocks(handler, mockService)
+	injectBookMocks(controller, mockService)
 
 	request := httptest.NewRequest("GET", "/v1/books?page=1&size=10", nil)
 	recorder := httptest.NewRecorder()
-	err := handler.GetBooks(ctx, recorder, request)
+	err := controller.GetBooks(ctx, recorder, request)
 	require.Error(t, err, "should not get books")
 	assert.ErrorIs(t, err, serviceError, "should get service error")
 }
 
-func TestBookHandler_GetBooks_PageRequestError(t *testing.T) {
+func TestBookController_GetBooks_PageRequestError(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	request := httptest.NewRequest("GET", "/v1/books?page=one&size=ten", nil)
 	recorder := httptest.NewRecorder()
-	err := handler.GetBooks(ctx, recorder, request)
+	err := controller.GetBooks(ctx, recorder, request)
 	require.Error(t, err, "should get a page of books")
 	assert.ErrorAs(t, err, &apiErrors.ValidationError{}, "should get a validation error")
 }
 
-func TestBookHandler_GetBooks_SortError(t *testing.T) {
+func TestBookController_GetBooks_SortError(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	request := httptest.NewRequest("GET", "/v1/books?page=1&size=10&sort=book_wheels,ASC", nil)
 	recorder := httptest.NewRecorder()
-	err := handler.GetBooks(ctx, recorder, request)
+	err := controller.GetBooks(ctx, recorder, request)
 	require.Error(t, err, "should get a page of books")
 	assert.ErrorAs(t, err, &apiErrors.ValidationError{}, "should get a validation error")
 }
 
-func TestBookHandler_GetBooks_FilterError(t *testing.T) {
+func TestBookController_GetBooks_FilterError(t *testing.T) {
 	ctx := context.Background()
-	handler := getBookHandler()
+	controller := getBookController()
 
 	request := httptest.NewRequest("GET", "/v1/books?page=1&size=10&sort=id,ASC&tag=one", nil)
 	recorder := httptest.NewRecorder()
-	err := handler.GetBooks(ctx, recorder, request)
+	err := controller.GetBooks(ctx, recorder, request)
 	require.Error(t, err, "should get a page of books")
 	assert.ErrorAs(t, err, &apiErrors.ValidationError{}, "should get a validation error")
 }
 
-func getBookHandler() *BookHandler {
+func getBookController() *BookController {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	return NewBookHandler(logger, nil)
+	return NewBookController(logger, nil)
 }
 
-func injectBookMocks(service *BookHandler, bookService *MockBookService) {
+func injectBookMocks(service *BookController, bookService *MockBookService) {
 	service.bookService = bookService
 }
 

@@ -72,7 +72,7 @@ type LookupItem struct {
 	Language      string    `json:"language"`
 	AuthorIDs     []int64   `json:"author_ids"`
 	CategoryIDs   []int64   `json:"category_ids"`
-	FileTypeIDs   []int64   `json:"file_types_ids"`
+	FileTypeIDs   []int64   `json:"file_type_ids"`
 	TagIDs        []int64   `json:"tag_ids"`
 }
 

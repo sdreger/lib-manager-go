@@ -12,21 +12,21 @@ import (
 	"testing"
 )
 
-func TestRegisterHandler(t *testing.T) {
+func TestController_RegisterRoutes(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
 	testRegistrar := handlers.RouteRegistrarMock{}
-	h := NewHandler(logger)
-	h.RegisterHandler(&testRegistrar)
+	h := NewController(logger)
+	h.RegisterRoutes(&testRegistrar)
 
 	assert.True(t, testRegistrar.IsRouteRegistered("GET /health", h.HealthProbe))
 }
 
 func TestHealthProbe(t *testing.T) {
-	h := Handler{logger: slog.New(slog.NewJSONHandler(os.Stdout, nil))}
+	controller := Controller{logger: slog.New(slog.NewJSONHandler(os.Stdout, nil))}
 
 	req := httptest.NewRequest("GET", "/health", nil)
 	w := httptest.NewRecorder()
-	err := h.HealthProbe(context.Background(), w, req)
+	err := controller.HealthProbe(context.Background(), w, req)
 
 	if assert.NoError(t, err, "should pass health probe") {
 		result := w.Result()

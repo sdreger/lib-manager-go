@@ -34,7 +34,7 @@ func NewRouter(logger *slog.Logger, db *sqlx.DB, blobStore *blobtstore.MinioStor
 	}
 
 	router.registerApplicationMiddlewares()
-	router.registerHandlers(db, blobStore)
+	router.registerRouteHandlers(db, blobStore)
 	logger.Info("router initialized", "registeredRoutes", router.routesCount.Load())
 
 	return &router
@@ -54,18 +54,19 @@ func (router *Router) registerApplicationMiddlewares() {
 	router.AddApplicationMiddleware(middleware.Panics())
 }
 
-// registerHandlers - register all handlers, and delegate route registration to them
-func (router *Router) registerHandlers(db *sqlx.DB, blobStore *blobtstore.MinioStore) {
-	system.NewHandler(router.logger).RegisterHandler(router)
-	handlersV1.NewBookHandler(router.logger, db).RegisterHandler(router)
-	handlersV1.NewCoverHandler(router.logger, blobStore).RegisterHandler(router)
+// registerRouteHandlers - init REST controllers, and delegate route handlers registration to them
+func (router *Router) registerRouteHandlers(db *sqlx.DB, blobStore *blobtstore.MinioStore) {
+	logger := router.logger
+	system.NewController(logger).RegisterRoutes(router)
+	handlersV1.NewBookController(logger, db).RegisterRoutes(router)
+	handlersV1.NewCoverController(logger, blobStore).RegisterRoutes(router)
 }
 
 func (router *Router) AddApplicationMiddleware(mw handlers.Middleware) {
 	router.mw = append(router.mw, mw)
 }
 
-// RegisterRoute - registers an endpoint. The endpoint group is optional.
+// RegisterRoute - registers a route handler (endpoint). The group is optional (e.g. '/v1', '/v2', etc.)
 // Handler-specific middlewares order matters, first passed - first executed
 func (router *Router) RegisterRoute(method string, group string, path string, handler handlers.HTTPHandler,
 	mw ...handlers.Middleware) {
