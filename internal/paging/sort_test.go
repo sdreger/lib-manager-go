@@ -46,10 +46,14 @@ func TestNewSort(t *testing.T) {
 		{sortString: "id,desc; DROP table books;", expectedOrderBy: "", err: true},
 	}
 
+	allowedSortFields := []string{
+		"id", "title", "subtitle", "isbn10", "isbn13", "asin", "pages", "edition",
+		"pub_date", "book_file_size", "created_at", "updated_at",
+	}
 	for _, tc := range tt {
 		t.Run(tc.sortString, func(t *testing.T) {
 			values := map[string][]string{"sort": {tc.sortString}}
-			sort, err := NewSort(values)
+			sort, err := NewSort(values, allowedSortFields)
 			if tc.err {
 				require.Error(t, err)
 				assert.ErrorAs(t, err, &errors.ValidationError{})

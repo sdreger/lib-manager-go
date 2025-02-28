@@ -65,7 +65,7 @@ func (cnt *BookController) GetBooks(ctx context.Context, w http.ResponseWriter, 
 		return pageErr
 	}
 
-	sort, sortErr := paging.NewSort(r.URL.Query())
+	sort, sortErr := paging.NewSort(r.URL.Query(), book.AllowedSortFields)
 	if sortErr != nil {
 		return sortErr
 	}

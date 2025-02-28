@@ -29,7 +29,7 @@ type TestStoreSuite struct {
 	suite.Suite
 	db            *sqlx.DB
 	testContainer *postgres.PostgresContainer
-	store         Store
+	store         *DBStore
 }
 
 func (s *TestStoreSuite) SetupSuite() {
@@ -289,7 +289,7 @@ func performLookupRequest(s *TestStoreSuite, requestValues map[string][]string) 
 	ctx := context.Background()
 	pageRequest, err := paging.NewPageRequest(requestValues)
 	s.Require().NoError(err, "failed to build page request")
-	sort, err := paging.NewSort(requestValues)
+	sort, err := paging.NewSort(requestValues, AllowedSortFields)
 	s.Require().NoError(err, "failed to build sort")
 	filter, err := NewFilter(requestValues)
 	s.Require().NoError(err, "failed to build filter")

@@ -49,7 +49,7 @@ func TestService_GetBooks_Success(t *testing.T) {
 	pageSizeNum, _ := strconv.Atoi(pageSize)
 	values := map[string][]string{"page": {pageNumber}, "size": {pageSize}}
 	pageRequest, _ := paging.NewPageRequest(values)
-	sort, _ := paging.NewSort(values)
+	sort, _ := paging.NewSort(values, AllowedSortFields)
 	filter, _ := NewFilter(values)
 
 	mockStore := NewMockStore(t)
@@ -80,7 +80,7 @@ func TestService_GetBooks_Failure(t *testing.T) {
 	pageSize := "1"
 	values := map[string][]string{"page": {pageNumber}, "size": {pageSize}}
 	pageRequest, _ := paging.NewPageRequest(values)
-	sort, _ := paging.NewSort(values)
+	sort, _ := paging.NewSort(values, AllowedSortFields)
 	filter, _ := NewFilter(values)
 
 	mockStore := NewMockStore(t)
