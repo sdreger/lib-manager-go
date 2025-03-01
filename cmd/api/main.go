@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/sdreger/lib-manager-go/internal/blobtstore"
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/sdreger/lib-manager-go/internal/database"
@@ -57,8 +58,8 @@ func run(logger *slog.Logger) (err error) {
 	logger.Info("database connection established", "host", appConfig.DB.Host, "stats", db.Stats())
 	defer func() {
 		logger.Info("closing database connection")
-		if err := db.Close(); err != nil {
-			logger.Error("can not close database connection", "error", err)
+		if closeErr := db.Close(); closeErr != nil {
+			err = errors.Join(err, closeErr)
 		}
 		logger.Info("database connection closed successfully")
 	}()
