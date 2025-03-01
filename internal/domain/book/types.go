@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+var (
+	AllowedSortFields = []string{
+		"id", "title", "subtitle", "isbn10", "isbn13", "asin", "pages", "edition",
+		"pub_date", "book_file_size", "created_at", "updated_at",
+	}
+)
+
 type Book struct {
 	ID            int64     `json:"id"`
 	Title         string    `json:"title"`
