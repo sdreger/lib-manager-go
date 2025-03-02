@@ -21,3 +21,6 @@ packages:
   github.com/sdreger/lib-manager-go/internal/domain/cover:
     interfaces:
       BlobStore:
+  github.com/sdreger/lib-manager-go/internal/domain/filetype:
+    interfaces:
+      Store:
