@@ -15,6 +15,7 @@ packages:
     interfaces:
       BookService:
       CoverService:
+      FileTypeService:
   github.com/sdreger/lib-manager-go/internal/domain/book:
     interfaces:
       Store:
