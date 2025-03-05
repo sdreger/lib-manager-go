@@ -1,0 +1,16 @@
+**/.DS_Store
+**/.dockerignore
+**/.env
+**/.gitignore
+# .git folder should not be here, because it is used to inject VCS information on image build stage
+**/.idea
+**/*.iml
+**/deploy
+**/bin
+**/charts
+**/docker-compose*
+**/compose.yaml
+**/Dockerfile
+LICENSE
+README.md
+Makefile
