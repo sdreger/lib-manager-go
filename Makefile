@@ -30,3 +30,8 @@ cover:
 # audit: perform full audit check
 .PHONY: audit
 audit: lint test vulncheck
+
+# run/dev: start local development environment
+.PHONY: run/dev
+run/dev:
+	docker compose --env-file ./deploy/docker/.env.dev -f ./deploy/docker/compose.yaml up --build

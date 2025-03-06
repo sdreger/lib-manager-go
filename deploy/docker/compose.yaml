@@ -1,0 +1,85 @@
+services:
+  app:
+    container_name: lib-manager
+    build:
+      dockerfile: deploy/docker/Dockerfile
+      context: ../..
+      target: final
+    environment:
+      LIB_MANAGER_HTTP_PORT: ${SERVER_PORT}
+      LIB_MANAGER_HTTP_CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      LIB_MANAGER_HTTP_CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS}
+      LIB_MANAGER_HTTP_CORS_ALLOWED_HEADERS: ${CORS_ALLOWED_HEADERS}
+      LIB_MANAGER_DB_HOST: ${POSTGRES_HOST}
+      LIB_MANAGER_DB_PORT: ${POSTGRES_PORT}
+      LIB_MANAGER_DB_NAME: ${POSTGRES_DB}
+      LIB_MANAGER_DB_USER: ${POSTGRES_USER}
+      LIB_MANAGER_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      LIB_MANAGER_DB_MAX_IDLE: ${POSTGRES_MAX_IDLE}
+      LIB_MANAGER_DB_MAX_OPEN: ${POSTGRES_MAX_OPEN}
+      LIB_MANAGER_DB_AUTO_MIGRATE: ${DB_AUTO_MIGRATE}
+      LIB_MANAGER_BLOB_STORE_MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      LIB_MANAGER_BLOB_STORE_MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      LIB_MANAGER_BLOB_STORE_MINIO_ACCESS_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      LIB_MANAGER_BLOB_STORE_MINIO_USE_SSL: ${MINIO_USE_SSL}
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    networks:
+      - lib-manager-dev
+    depends_on:
+      postgres:
+         condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  postgres:
+    container_name: postgres
+    image: postgres:17.3-alpine3.21
+    restart: unless-stopped
+    user: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - lib-manager-dev
+
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio:RELEASE.2025-02-18T16-25-55Z
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 3s
+    networks:
+      - lib-manager-dev
+
+volumes:
+  postgres-data: {}
+  minio-data: {}
+
+networks:
+  lib-manager-dev:
+    name: lib-manager-dev
+    driver: bridge
