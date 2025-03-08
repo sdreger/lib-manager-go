@@ -35,6 +35,7 @@ func TestOpenDBConnectionAndMigrate(t *testing.T) {
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
 				WithStartupTimeout(5*time.Second),
+			wait.ForListeningPort("5432/tcp"),
 		),
 	)
 	require.NoError(t, err, "error starting postgres test container")

@@ -323,6 +323,7 @@ func startDBContainer(t *testing.T) *postgres.PostgresContainer {
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
 				WithStartupTimeout(5*time.Second),
+			wait.ForListeningPort("5432/tcp"),
 		),
 	)
 	testcontainers.CleanupContainer(t, pg)
