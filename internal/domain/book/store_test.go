@@ -323,6 +323,7 @@ func startDBContainer(t *testing.T) *postgres.PostgresContainer {
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
 				WithStartupTimeout(5*time.Second),
+			wait.ForListeningPort("5432/tcp"),
 		),
 	)
 	testcontainers.CleanupContainer(t, pg)
@@ -340,8 +341,11 @@ func getTestDBConfig(t *testing.T, pg *postgres.PostgresContainer) config.DBConf
 	require.NoError(t, err, "error getting mapped port 5432/tcp")
 	port, err := strconv.Atoi(containerPort.Port())
 	require.NoError(t, err, "error converting mapped port to int")
+	host, err := pg.Host(ctx)
+	require.NoError(t, err, "error getting test container host")
 
 	dbConfig := appConfig.DB
+	dbConfig.Host = host
 	dbConfig.Port = port
 	dbConfig.User = dbUser
 	dbConfig.Password = dBPassword
