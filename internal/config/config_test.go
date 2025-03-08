@@ -102,6 +102,18 @@ func TestNewConfigCustomHTTPEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("HTTP_CORS_ALLOWED_METHODS"), strings.Join(customAllowedMethods, ","))
 	_ = os.Setenv(getEnvKey("HTTP_CORS_ALLOWED_HEADERS"), strings.Join(customAllowedHeaders, ","))
 
+	defer func() {
+		_ = os.Unsetenv(getEnvKey("HTTP_HOST"))
+		_ = os.Unsetenv(getEnvKey("HTTP_PORT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_READ_TIMEOUT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_WRITE_TIMEOUT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_IDLE_TIMEOUT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_SHUTDOWN_TIMEOUT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_CORS_ALLOWED_ORIGINS"))
+		_ = os.Unsetenv(getEnvKey("HTTP_CORS_ALLOWED_METHODS"))
+		_ = os.Unsetenv(getEnvKey("HTTP_CORS_ALLOWED_HEADERS"))
+	}()
+
 	config, err := New()
 	if assert.NoError(t, err, "should parse custom config") {
 		assert.NotEmpty(t, config, "config should not be empty")
@@ -145,6 +157,21 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("DB_TIMEZONE"), customTimezone)
 	_ = os.Setenv(getEnvKey("DB_AUTO_MIGRATE"), strconv.FormatBool(customAutoMigrate))
 
+	defer func() {
+		_ = os.Unsetenv(getEnvKey("DB_DRIVER"))
+		_ = os.Unsetenv(getEnvKey("DB_HOST"))
+		_ = os.Unsetenv(getEnvKey("DB_PORT"))
+		_ = os.Unsetenv(getEnvKey("DB_USER"))
+		_ = os.Unsetenv(getEnvKey("DB_PASSWORD"))
+		_ = os.Unsetenv(getEnvKey("DB_NAME"))
+		_ = os.Unsetenv(getEnvKey("DB_SCHEMA"))
+		_ = os.Unsetenv(getEnvKey("DB_MAX_IDLE"))
+		_ = os.Unsetenv(getEnvKey("DB_MAX_OPEN"))
+		_ = os.Unsetenv(getEnvKey("DB_SSL_MODE"))
+		_ = os.Unsetenv(getEnvKey("DB_TIMEZONE"))
+		_ = os.Unsetenv(getEnvKey("DB_AUTO_MIGRATE"))
+	}()
+
 	config, err := New()
 	if assert.NoError(t, err, "should parse custom config") {
 		assert.NotEmpty(t, config, "config should not be empty")
@@ -175,6 +202,14 @@ func TestNewConfigCustomBLOBStoreEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"), customBlobStoreMinioAccessKeyID)
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"), customBlobStoreMinioSecretAccessKey)
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"), strconv.FormatBool(customBlobStoreMinioUseSSL))
+
+	defer func() {
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_BOOK_COVER_BUCKET"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ENDPOINT"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"))
+	}()
 
 	config, err := New()
 	if assert.NoError(t, err, "should parse custom config") {
@@ -213,6 +248,32 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"), "")
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"), "")
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"), "")
+
+	defer func() {
+		_ = os.Unsetenv(getEnvKey("HTTP_HOST"))
+		_ = os.Unsetenv(getEnvKey("HTTP_PORT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_READ_TIMEOUT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_WRITE_TIMEOUT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_IDLE_TIMEOUT"))
+		_ = os.Unsetenv(getEnvKey("HTTP_SHUTDOWN_TIMEOUT"))
+		_ = os.Unsetenv(getEnvKey("DB_Driver"))
+		_ = os.Unsetenv(getEnvKey("DB_HOST"))
+		_ = os.Unsetenv(getEnvKey("DB_PORT"))
+		_ = os.Unsetenv(getEnvKey("DB_USER"))
+		_ = os.Unsetenv(getEnvKey("DB_PASSWORD"))
+		_ = os.Unsetenv(getEnvKey("DB_NAME"))
+		_ = os.Unsetenv(getEnvKey("DB_SCHEMA"))
+		_ = os.Unsetenv(getEnvKey("DB_MAX_IDLE"))
+		_ = os.Unsetenv(getEnvKey("DB_MAX_OPEN"))
+		_ = os.Unsetenv(getEnvKey("DB_SSL_MODE"))
+		_ = os.Unsetenv(getEnvKey("DB_TIMEZONE"))
+		_ = os.Unsetenv(getEnvKey("DB_AUTO_MIGRATE"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_BOOK_COVER_BUCKET"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ENDPOINT"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"))
+		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"))
+	}()
 
 	config, err := New()
 	if assert.NoError(t, err, "should parse default config") {
@@ -288,6 +349,8 @@ func TestNewConfigWithWrongPort(t *testing.T) {
 		assert.Contains(t, parseError.Error(), `parsing "wrong value": invalid syntax`)
 		assert.Empty(t, config, "config should not be empty")
 	}
+
+	_ = os.Unsetenv(getEnvKey("HTTP_PORT"))
 }
 
 func getEnvKey(key string) string {
