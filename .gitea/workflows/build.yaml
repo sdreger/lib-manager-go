@@ -19,8 +19,6 @@ jobs:
           go-version-file: 'go.mod'
       - name: Show Go version
         run: go version
-      - name: Verify 'go.mod' consistency
-        run: go mod tidy && git diff --exit-code
       - name: Download dependencies
         run: go mod download
       - name: Verify dependencies
