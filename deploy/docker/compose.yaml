@@ -1,6 +1,6 @@
 services:
   app:
-    container_name: lib-manager
+    container_name: lib-manager-dev
     build:
       dockerfile: deploy/docker/Dockerfile
       context: ../..
@@ -13,6 +13,7 @@ services:
       LIB_MANAGER_DB_HOST: ${POSTGRES_HOST}
       LIB_MANAGER_DB_PORT: ${POSTGRES_PORT}
       LIB_MANAGER_DB_NAME: ${POSTGRES_DB}
+      LIB_MANAGER_DB_SCHEMA: ${POSTGRES_SCHEMA}
       LIB_MANAGER_DB_USER: ${POSTGRES_USER}
       LIB_MANAGER_DB_PASSWORD: ${POSTGRES_PASSWORD}
       LIB_MANAGER_DB_MAX_IDLE: ${POSTGRES_MAX_IDLE}
@@ -22,18 +23,19 @@ services:
       LIB_MANAGER_BLOB_STORE_MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       LIB_MANAGER_BLOB_STORE_MINIO_ACCESS_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       LIB_MANAGER_BLOB_STORE_MINIO_USE_SSL: ${MINIO_USE_SSL}
+      LIB_MANAGER_BLOB_STORE_BOOK_COVER_BUCKET: ${BOOK_COVER_BUCKET}
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     networks:
       - lib-manager-dev
     depends_on:
       postgres:
-         condition: service_healthy
+        condition: service_healthy
       minio:
         condition: service_healthy
 
   postgres:
-    container_name: postgres
+    container_name: postgres-dev
     image: postgres:17.3-alpine3.21
     restart: unless-stopped
     user: postgres
@@ -55,7 +57,7 @@ services:
       - lib-manager-dev
 
   minio:
-    container_name: minio
+    container_name: minio-dev
     image: quay.io/minio/minio:RELEASE.2025-02-18T16-25-55Z
     command: server /data --console-address ":9001"
     volumes:
@@ -76,8 +78,8 @@ services:
       - lib-manager-dev
 
 volumes:
-  postgres-data: {}
-  minio-data: {}
+  postgres-data: { }
+  minio-data: { }
 
 networks:
   lib-manager-dev:
