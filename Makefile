@@ -1,4 +1,6 @@
 SHELL := /bin/bash
+IMAGE_REGISTRY := gitea.dreger.lan/sdreger/lib-manager-go
+BUILD_REF = $(shell git rev-parse --short HEAD)
 
 # lint: run lint checks (https://golangci-lint.run/welcome/quick-start/)
 .PHONY: lint
@@ -31,7 +33,12 @@ cover:
 .PHONY: audit
 audit: lint test vulncheck
 
-# run/dev: start local development environment
-.PHONY: run/dev
-run/dev:
+# docker/build: build the Docker image
+.PHONY: docker/build
+docker/build:
+	docker build -t ${IMAGE_REGISTRY}:${BUILD_REF} -f deploy/docker/Dockerfile .
+
+# docker/run: start Docker development environment
+.PHONY: docker/run
+docker/run:
 	docker compose --env-file ./deploy/docker/.env.dev -f ./deploy/docker/compose.yaml up --build
