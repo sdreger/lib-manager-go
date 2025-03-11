@@ -13,7 +13,7 @@ func TestNewSort(t *testing.T) {
 		expectedOrderBy string
 		err             bool
 	}{
-		{sortString: "", expectedOrderBy: "updated_at DESC", err: false},
+		{sortString: "", expectedOrderBy: "id ASC", err: false},
 		{sortString: "id,asc", expectedOrderBy: "id ASC", err: false},
 		{sortString: "id,desc", expectedOrderBy: "id DESC", err: false},
 		{sortString: "id,ASC", expectedOrderBy: "id ASC", err: false},

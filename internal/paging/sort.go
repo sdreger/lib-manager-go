@@ -10,8 +10,8 @@ import (
 const (
 	sortAscending        = "ASC"
 	sortDescending       = "DESC"
-	defaultSortBy        = "updated_at"
-	defaultSortDirection = sortDescending
+	defaultSortBy        = "id"
+	defaultSortDirection = sortAscending
 	queryParamSort       = "sort"
 )
 
