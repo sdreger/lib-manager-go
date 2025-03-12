@@ -20,18 +20,19 @@ var (
 	defaultHTTPIdleTimeout, _     = time.ParseDuration("120s")
 	defaultHTTPShutdownTimeout, _ = time.ParseDuration("20s")
 
-	defaultDBDriver    = "postgres"
-	defaultDBHost      = "127.0.0.1"
-	defaultDBPort      = 5432
-	defaultDBUser      = "postgres"
-	defaultDBPassword  = "postgres"
-	defaultDBName      = "sandbox"
-	defaultDBSchema    = "ebook"
-	defaultDBMaxIdle   = 2
-	defaultDBMaxOpen   = 10
-	defaultDBSSLMode   = "disable"
-	defaultDBTimezone  = "UTC"
-	defaultAutoMigrate = false
+	defaultDBDriver                = "postgres"
+	defaultDBHost                  = "127.0.0.1"
+	defaultDBPort                  = 5432
+	defaultDBUser                  = "postgres"
+	defaultDBPassword              = "postgres"
+	defaultDBName                  = "sandbox"
+	defaultDBSchema                = "ebook"
+	defaultDBMaxIdle               = 2
+	defaultDBMaxOpen               = 10
+	defaultDBSSLMode               = "disable"
+	defaultDBTimezone              = "UTC"
+	defaultAutoMigrate             = false
+	defaultMigrationLockTimeoutSec = uint64(300)
 
 	defaultBlobStoreBookCoverBucket      = "ebook-covers"
 	defaultBlobStoreMinioEndpoint        = "127.0.0.1:9000"
@@ -70,6 +71,7 @@ func TestNewConfigDefaults(t *testing.T) {
 			assert.Equal(t, defaultDBSSLMode, config.DB.SSLMode)
 			assert.Equal(t, defaultDBTimezone, config.DB.Timezone)
 			assert.Equal(t, defaultAutoMigrate, config.DB.AutoMigrate)
+			assert.Equal(t, defaultMigrationLockTimeoutSec, config.DB.MigrationLockTimeoutSec)
 		}
 
 		if assert.NotEmpty(t, config.BLOBStore, "BLOBStore config should not be empty") {
@@ -143,6 +145,7 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 	customSSLMode := "enable"
 	customTimezone := "CEST"
 	customAutoMigrate := true
+	customMigrationLockTimeoutSec := uint64(60)
 
 	_ = os.Setenv(getEnvKey("DB_DRIVER"), customDriver)
 	_ = os.Setenv(getEnvKey("DB_HOST"), customHost)
@@ -156,6 +159,7 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("DB_SSL_MODE"), customSSLMode)
 	_ = os.Setenv(getEnvKey("DB_TIMEZONE"), customTimezone)
 	_ = os.Setenv(getEnvKey("DB_AUTO_MIGRATE"), strconv.FormatBool(customAutoMigrate))
+	_ = os.Setenv(getEnvKey("DB_MIGRATION_LOCK_TIMEOUT_SEC"), strconv.Itoa(int(customMigrationLockTimeoutSec)))
 
 	defer func() {
 		_ = os.Unsetenv(getEnvKey("DB_DRIVER"))
@@ -170,6 +174,7 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 		_ = os.Unsetenv(getEnvKey("DB_SSL_MODE"))
 		_ = os.Unsetenv(getEnvKey("DB_TIMEZONE"))
 		_ = os.Unsetenv(getEnvKey("DB_AUTO_MIGRATE"))
+		_ = os.Unsetenv(getEnvKey("DB_MIGRATION_LOCK_TIMEOUT_SEC"))
 	}()
 
 	config, err := New()
@@ -187,6 +192,7 @@ func TestNewConfigCustomDBEnv(t *testing.T) {
 		assert.Equal(t, customSSLMode, config.DB.SSLMode)
 		assert.Equal(t, customTimezone, config.DB.Timezone)
 		assert.Equal(t, customAutoMigrate, config.DB.AutoMigrate)
+		assert.Equal(t, customMigrationLockTimeoutSec, config.DB.MigrationLockTimeoutSec)
 	}
 }
 
@@ -242,6 +248,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("DB_SSL_MODE"), "")
 	_ = os.Setenv(getEnvKey("DB_TIMEZONE"), "")
 	_ = os.Setenv(getEnvKey("DB_AUTO_MIGRATE"), "")
+	_ = os.Setenv(getEnvKey("DB_MIGRATION_LOCK_TIMEOUT_SEC"), "")
 
 	_ = os.Setenv(getEnvKey("BLOB_STORE_BOOK_COVER_BUCKET"), "")
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ENDPOINT"), "")
@@ -268,6 +275,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 		_ = os.Unsetenv(getEnvKey("DB_SSL_MODE"))
 		_ = os.Unsetenv(getEnvKey("DB_TIMEZONE"))
 		_ = os.Unsetenv(getEnvKey("DB_AUTO_MIGRATE"))
+		_ = os.Unsetenv(getEnvKey("DB_MIGRATION_LOCK_TIMEOUT_SEC"))
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_BOOK_COVER_BUCKET"))
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ENDPOINT"))
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"))
@@ -299,6 +307,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 			assert.Equal(t, defaultDBSSLMode, config.DB.SSLMode)
 			assert.Equal(t, defaultDBTimezone, config.DB.Timezone)
 			assert.Equal(t, defaultAutoMigrate, config.DB.AutoMigrate)
+			assert.Equal(t, defaultMigrationLockTimeoutSec, config.DB.MigrationLockTimeoutSec)
 		}
 
 		if assert.NotEmpty(t, config.BLOBStore, "BLOBStore config should not be empty") {
