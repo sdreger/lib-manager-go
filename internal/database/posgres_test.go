@@ -50,15 +50,37 @@ func TestOpenDBConnectionAndMigrate(t *testing.T) {
 	require.NotNil(t, dbConnection, "test container connection is nil")
 	defer dbConnection.Close()
 
-	t.Run("fail migration", func(t *testing.T) {
+	t.Run("fail migration with schema error", func(t *testing.T) {
 		dbConfig.AutoMigrate = true
 		dbConfig.Schema = "$" // wrong schema name
 		err = Migrate(logger, dbConfig, dbConnection.DB)
 		require.Error(t, err, "should have failed to migrate")
+		assert.Contains(t, err.Error(), `syntax error at or near "$"`)
+
+		dbConfig.Schema = "ebook"
+	})
+
+	t.Run("fail migration with migration timeout error", func(t *testing.T) {
+		dbConfig.AutoMigrate = true
+		dbConfig.MigrationLockTimeoutSec = 0 // wrong timeout value
+		err = Migrate(logger, dbConfig, dbConnection.DB)
+		require.Error(t, err, "should have failed to migrate")
+		assert.Contains(t, err.Error(), `failure threshold must be greater than 0`)
+
+		dbConfig.MigrationLockTimeoutSec = 300
+	})
+
+	t.Run("fail migration with wrong dialect", func(t *testing.T) {
+		dbConfig.AutoMigrate = true
+		dbConfig.Driver = "unknown" // wrong dialect
+		err = Migrate(logger, dbConfig, nil)
+		require.Error(t, err, "should have failed due to unknown dialect")
+		assert.Contains(t, err.Error(), `"unknown": unknown dialect`)
+
+		dbConfig.Driver = "postgres"
 	})
 
 	t.Run("success migration", func(t *testing.T) {
-		dbConfig.Schema = "ebook"
 		err = Migrate(logger, dbConfig, dbConnection.DB)
 		assert.NoError(t, err, "error running migration")
 	})
@@ -87,19 +109,6 @@ func TestSkipMigrate(t *testing.T) {
 	appConfig.DB.AutoMigrate = false
 	err = Migrate(logger, appConfig.DB, nil)
 	assert.NoError(t, err, "error skipping migration")
-}
-
-func TestErrorMigrate(t *testing.T) {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	appConfig, err := config.New()
-	require.NoError(t, err, "error loading config")
-
-	dbConfig := appConfig.DB
-	dbConfig.AutoMigrate = true
-	dbConfig.Driver = "unknown"
-	err = Migrate(logger, dbConfig, nil)
-	require.Error(t, err, "should have failed due to unknown dialect")
-	assert.Contains(t, err.Error(), `"unknown": unknown dialect`)
 }
 
 func TestCannotPingDBConnection(t *testing.T) {
