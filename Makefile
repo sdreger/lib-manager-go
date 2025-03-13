@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 IMAGE_REGISTRY := gitea.dreger.lan/sdreger/lib-manager-go
 BUILD_REF = $(shell git rev-parse --short HEAD)
+KIND_CLUSTER_NAME := lib-manager-cluster
 
 # lint: run lint checks (https://golangci-lint.run/welcome/quick-start/)
 .PHONY: lint
@@ -20,12 +21,12 @@ vulncheck:
 # test: run all application tests with data race detector
 .PHONY: test
 test:
-	go test -v -race -buildvcs ./...
+	go test -v -race -shuffle=on -buildvcs ./...
 
 # cover: run all application tests and generate test coverage report
 .PHONY: cover
 cover:
-	go test -v -race -buildvcs -coverprofile=/tmp/cover.out.tmp ./...
+	go test -v -race -shuffle=on -buildvcs -coverprofile=/tmp/cover.out.tmp ./...
 	grep -v "_mock.go" /tmp/cover.out.tmp > /tmp/cover.out
 	go tool cover -html=/tmp/cover.out
 
@@ -42,3 +43,16 @@ docker/build:
 .PHONY: docker/run
 docker/run:
 	docker compose --env-file ./deploy/docker/.env.dev -f ./deploy/docker/compose.yaml up --build
+
+.PHONY: kind/create-cluster
+kind/create-cluster:
+	kind create cluster --name ${KIND_CLUSTER_NAME} --config deploy/kind/kind-config.yaml
+	docker exec -t ${KIND_CLUSTER_NAME}-control-plane update-ca-certificates
+
+.PHONY: kind/delete-cluster
+kind/delete-cluster:
+	kind delete cluster --name ${KIND_CLUSTER_NAME}
+
+.PHONY: kind/load-image
+kind/load-image:
+	kind load docker-image --name ${KIND_CLUSTER_NAME} ${IMAGE_REGISTRY}:${BUILD_REF}
