@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lib-manager-go
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lib-manager-go
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: lib-manager-go
+    spec:
+      initContainers:
+        - name: wait
+          image: busybox:1.28
+          command: [ 'sh', '-c', 'sleep 10' ]
+      containers:
+        - image: gitea.dreger.lan/sdreger/lib-manager-go:latest
+          name: lib-manager-go
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: lib-manager-go
+            - configMapRef:
+                name: lib-manager-go
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources: {}
