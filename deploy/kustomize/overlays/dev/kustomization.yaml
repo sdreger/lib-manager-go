@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: lib-manager-dev
+nameSuffix: '-dev'
+resources:
+  - ../../base
+components:
+  - ../../components/app_ports
+patches:
+  - path: patch_strategy.yaml
+  - path: patch_resources.yaml
+  - target:
+      version: v1
+      kind: Namespace
+      name: lib-manager
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: lib-manager-dev
+labels:
+  - pairs:
+      app: lib-manager-go
+    includeSelectors: false
+images:
+  - name: gitea.dreger.lan/sdreger/lib-manager-go:latest
+    newName: gitea.dreger.lan/sdreger/lib-manager-go
+    newTag: latest
+replicas:
+  - count: 3
+    name: lib-manager-go
+configMapGenerator:
+  - name: lib-manager-go
+    behavior: merge
+    literals:
+      - LIB_MANAGER_HTTP_PORT=8060
+      - LIB_MANAGER_DB_HOST=postgres-dev
+      - LIB_MANAGER_BLOB_STORE_MINIO_ENDPOINT=minio-dev:9000

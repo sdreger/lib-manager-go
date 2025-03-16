@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lib-manager-go
+spec:
+  template:
+    spec:
+      containers:
+        - name: lib-manager-go
+          resources:
+            requests:
+              cpu: '0.1'
+              memory: '128Mi'
+            limits:
+              cpu: '0.5'
+              memory: '256Mi'
