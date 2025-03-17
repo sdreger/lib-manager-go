@@ -4,6 +4,8 @@ namespace: lib-manager-dev
 nameSuffix: '-dev'
 resources:
   - ../../base
+  - postgres.yaml
+  - minio.yaml
 components:
   - ../../components/app_ports
 patches:
@@ -24,7 +26,7 @@ labels:
 images:
   - name: gitea.dreger.lan/sdreger/lib-manager-go:latest
     newName: gitea.dreger.lan/sdreger/lib-manager-go
-    newTag: latest
+    newTag: latest # set a custom tag here
 replicas:
   - count: 3
     name: lib-manager-go

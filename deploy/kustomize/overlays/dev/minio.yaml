@@ -1,0 +1,102 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: minio-claim
+  labels:
+    app: minio
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: minio-volume
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/minio-data"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+spec:
+  selector:
+    app: minio
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: api
+      nodePort: 30003
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-console
+spec:
+  selector:
+    app: minio
+  ports:
+    - protocol: TCP
+      port: 9001
+      targetPort: console
+      nodePort: 30004
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+spec:
+  serviceName: minio
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: quay.io/minio/minio:RELEASE.2025-02-18T16-25-55Z
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: api
+              containerPort: 9000
+            - name: console
+              containerPort: 9001
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: lib-manager-go
+                  key: LIB_MANAGER_BLOB_STORE_MINIO_ACCESS_KEY_ID
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: lib-manager-go
+                  key: LIB_MANAGER_BLOB_STORE_MINIO_ACCESS_SECRET_KEY
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - 'minio server /data --console-address :9001'
+          volumeMounts:
+            - mountPath: /data
+              name: minio-data
+      volumes:
+        - name: minio-data
+          persistentVolumeClaim:
+            claimName: minio-claim

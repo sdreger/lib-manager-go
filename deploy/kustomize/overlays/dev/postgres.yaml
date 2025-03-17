@@ -1,0 +1,87 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-claim
+  labels:
+    app: postgres
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: postgres-volume
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/postgres-data"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+      nodePort: 30002
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17.2-alpine3.21
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: lib-manager-go
+                  key: LIB_MANAGER_DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: lib-manager-go
+                  key: LIB_MANAGER_DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: lib-manager-go
+                  key: LIB_MANAGER_DB_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-claim
