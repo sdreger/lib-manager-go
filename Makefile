@@ -37,7 +37,7 @@ audit: lint test vulncheck
 # docker/build: build the Docker image
 .PHONY: docker/build
 docker/build:
-	docker build -t ${IMAGE_REGISTRY}:${BUILD_REF} -f deploy/docker/Dockerfile .
+	docker build -t ${IMAGE_REGISTRY}:${BUILD_REF} -t ${IMAGE_REGISTRY}:latest -f deploy/docker/Dockerfile .
 
 # docker/run: start Docker development environment
 .PHONY: docker/run
@@ -55,4 +55,19 @@ kind/delete-cluster:
 
 .PHONY: kind/load-image
 kind/load-image:
-	kind load docker-image --name ${KIND_CLUSTER_NAME} ${IMAGE_REGISTRY}:${BUILD_REF}
+	kind load docker-image --name ${KIND_CLUSTER_NAME} ${IMAGE_REGISTRY}:latest
+
+.PHONY: kustomize/manifests/dev
+kustomize/manifests/dev:
+	kubectl kustomize deploy/kustomize/overlays/dev
+
+.PHONY: kustomize/apply/dev
+kustomize/apply/dev:
+	kubectl apply --kustomize deploy/kustomize/overlays/dev
+
+.PHONY: kustomize/delete/dev
+kustomize/delete/dev:
+	kubectl delete --kustomize deploy/kustomize/overlays/dev
+
+.PHONY: kustomize/bootstrap/dev
+kustomize/bootstrap/dev: docker/build kind/load-image kustomize/apply/dev
