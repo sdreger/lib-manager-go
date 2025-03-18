@@ -7,8 +7,7 @@ spec:
     - name: http
       port: 8070
       targetPort: 8070
-      nodePort: 30001
       protocol: TCP
   selector:
     app: lib-manager-go
-  type: NodePort
+  type: ClusterIP

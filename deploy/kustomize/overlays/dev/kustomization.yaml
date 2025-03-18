@@ -13,6 +13,17 @@ patches:
   - path: patch_resources.yaml
   - target:
       version: v1
+      kind: Service
+      name: lib-manager-go
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30001
+  - target:
+      version: v1
       kind: Namespace
       name: lib-manager
     patch: |-
