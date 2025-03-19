@@ -3,9 +3,18 @@ kind: Kustomization
 resources:
   - ../../base
 components:
+  - ../../components/ingress-traefik
   - ../../components/app_ports
 patches:
   - path: patch_resources.yaml
+  - target:
+      kind: Ingress
+      name: lib-manager-go
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: "lib-manager-go.dreger.lan"
+
 labels:
   - pairs:
       app: lib-manager-go

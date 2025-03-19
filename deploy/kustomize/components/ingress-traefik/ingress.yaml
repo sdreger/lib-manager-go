@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lib-manager-go
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: lib-manager-lib-manager-go-strip-prefix@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: "domain.tld"
+      http:
+        paths:
+          - path: /api
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: lib-manager-go
+                port:
+                  number: 8070

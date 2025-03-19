@@ -17,3 +17,8 @@ replacements:
         fieldPaths:
           - spec.ports.0.port
           - spec.ports.0.targetPort
+      - select:
+          kind: Ingress
+          name: lib-manager-go
+        fieldPaths:
+          - spec.rules.0.http.paths.0.backend.service.port.number
