@@ -71,3 +71,13 @@ kustomize/delete/dev:
 
 .PHONY: kustomize/bootstrap/dev
 kustomize/bootstrap/dev: docker/build kind/load-image kustomize/apply/dev
+
+.PHONY: sops/encrypt/secret
+sops/encrypt/secret:
+	sops --encrypt --input-type=dotenv \
+	deploy/kustomize/overlays/prod/.secret.env > deploy/kustomize/overlays/prod/.secret.encrypted.env
+
+.PHONY: sops/edit/secret
+sops/edit/secret:
+	SOPS_AGE_KEY_FILE=age.agekey \
+	sops edit --input-type dotenv --output-type dotenv deploy/kustomize/overlays/prod/.secret.encrypted.env
