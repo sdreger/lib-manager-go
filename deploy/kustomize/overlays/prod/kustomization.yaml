@@ -14,17 +14,16 @@ patches:
       - op: replace
         path: /spec/rules/0/host
         value: "lib-manager-go.dreger.lan"
+      - op: add
+        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.entrypoints
+        value: "web"
 
 labels:
   - pairs:
       app: lib-manager-go
     includeSelectors: false
-images:
-  - name: gitea.dreger.lan/sdreger/lib-manager-go:latest
-    newName: gitea.dreger.lan/sdreger/lib-manager-go
-    newTag: 0.0.3
 replicas:
-  - count: 3
+  - count: 1
     name: lib-manager-go
 configMapGenerator:
   - name: lib-manager-go
