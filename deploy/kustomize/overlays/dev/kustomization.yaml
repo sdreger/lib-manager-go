@@ -11,6 +11,7 @@ components:
 patches:
   - path: patch_strategy.yaml
   - path: patch_resources.yaml
+  - path: patch_init.yaml
   - target:
       version: v1
       kind: Service

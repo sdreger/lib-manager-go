@@ -61,6 +61,10 @@ kind/load-image:
 kustomize/manifests/dev:
 	kubectl kustomize deploy/kustomize/overlays/dev
 
+.PHONY: kustomize/manifests/prod
+kustomize/manifests/prod:
+	kubectl kustomize deploy/kustomize/overlays/prod
+
 .PHONY: kustomize/apply/dev
 kustomize/apply/dev:
 	kubectl apply --kustomize deploy/kustomize/overlays/dev
