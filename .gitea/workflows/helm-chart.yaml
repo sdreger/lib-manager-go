@@ -1,0 +1,49 @@
+name: Release Helm Chart
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - deploy/helm/**
+  registry_package: {}
+
+env:
+  CHART_VERSION: 0.0.2
+
+jobs:
+  helm:
+    if: (contains(gitea.event.package.html_url, 'packages/container') && !endsWith(gitea.event.package.html_url, 'latest')) || gitea.event_name == 'push'
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Package info
+        run: |
+          echo 'Build event': ${{ gitea.event_name }}
+          echo 'Build for image:' ${{ gitea.event.package.html_url }}
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@gitea.dreger.lan"
+          git config --local user.name "Gitea Actions"
+      - name: Add registry CA
+        env:
+          CA_SECRET: ${{ secrets.REGISTRY_CA }}
+        shell: bash
+        run: |
+          printf '%s' "${CA_SECRET}" > /etc/ssl/certs/registry-ca.pem
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+      - name: Package and upload Helm chart
+        run: |
+          helm dependency build ./deploy/helm
+          LATEST_APP_VERSION=$(git describe --tags --abbrev=0)
+          CHART_FILE=lib-manager-go-${{ env.CHART_VERSION }}
+          helm package --version ${{ env.CHART_VERSION }} --app-version "${LATEST_APP_VERSION}" ./deploy/helm
+          curl --cacert /etc/ssl/certs/registry-ca.pem \
+            --user ${{ gitea.repository_owner }}:${{ secrets.CI_TOKEN }} \
+            -X POST --upload-file ./${CHART_FILE}.tgz \
+            https://gitea.dreger.lan/api/packages/${{ gitea.repository_owner }}/helm/api/charts
