@@ -1,10 +1,5 @@
 name: Release Helm Chart
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - deploy/helm/**
   registry_package: {}
 
 env:
@@ -12,7 +7,7 @@ env:
 
 jobs:
   helm:
-    if: (contains(gitea.event.package.html_url, 'packages/container') && !endsWith(gitea.event.package.html_url, 'latest')) || gitea.event_name == 'push'
+    if: gitea.event.package.type == 'container' && gitea.event.package.version != 'latest'
     permissions:
       contents: write
     runs-on: ubuntu-22.04
