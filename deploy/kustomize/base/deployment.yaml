@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: lib-manager-go
+  annotations:
+    ignore-check.kube-linter.io/latest-tag: "the tag is set by the deployment system"
 spec:
   replicas: 1
   selector:
@@ -17,6 +19,11 @@ spec:
         - image: gitea.dreger.lan/sdreger/lib-manager-go:latest
           name: lib-manager-go
           imagePullPolicy: Always
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
           envFrom:
             - secretRef:
                 name: lib-manager-go

@@ -65,6 +65,14 @@ kustomize/manifests/dev:
 kustomize/manifests/prod:
 	kubectl kustomize deploy/kustomize/overlays/prod
 
+.PHONY: kustomize/lint/dev
+kustomize/lint/dev:
+	kubectl kustomize deploy/kustomize/overlays/dev | kube-linter lint -
+
+.PHONY: kustomize/lint/prod
+kustomize/lint/prod:
+	kubectl kustomize deploy/kustomize/overlays/prod | kube-linter lint -
+
 .PHONY: kustomize/apply/dev
 kustomize/apply/dev:
 	kubectl apply --kustomize deploy/kustomize/overlays/dev
