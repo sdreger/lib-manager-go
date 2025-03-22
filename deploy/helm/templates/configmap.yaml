@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "helm.fullname" . }}
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}
+data:
+  httpPort: {{ .Values.service.port | quote }}
+  httpCorsAllowedOrigins: {{ .Values.http.corsAllowedOrigins | quote }}
+  httpCorsAllowedMethods: {{ .Values.http.corsAllowedMethods | quote }}
+  httpCorsAllowedHeaders: {{ .Values.http.corsAllowedHeaders | quote }}
+  dbHost: {{ .Values.db.host | quote }}
+  dbPort: {{ .Values.db.port | quote }}
+  dbName: {{ .Values.db.name | quote }}
+  dbSchema: {{ .Values.db.schema | quote }}
+  dbMaxIdle: {{ .Values.db.maxIdle | quote }}
+  dbMaxOpen: {{ .Values.db.maxOpen | quote }}
+  dbAutoMigrate: {{ .Values.db.autoMigrate | quote }}
+  blobStoreEndpoint: {{ .Values.blobStore.endpoint | quote }}
+  blobStoreUseSSL: {{ .Values.blobStore.useSSL | quote }}
+  blobStoreBookCoverBucket: {{ .Values.blobStore.bookCoverBucket | quote }}

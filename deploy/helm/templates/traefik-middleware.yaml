@@ -1,0 +1,12 @@
+{{- if and .Values.ingress.enabled (not (empty .Values.ingress.stripPrefix)) (eq $.Values.ingress.className "traefik") -}}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "helm.fullname" . }}-strip-prefix
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}
+spec:
+  stripPrefix:
+    prefixes:
+      - {{ .Values.ingress.stripPrefix }}
+{{- end }}
