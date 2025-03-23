@@ -1,0 +1,29 @@
+http:
+  corsAllowedOrigins: "localhost:3000"
+  corsAllowedMethods: "GET,PUT,POST,DELETE"
+  corsAllowedHeaders: "Accept,Content-type"
+
+db:
+  host: postgres
+  port: 5432
+  name: 'sandbox'
+  user: 'postgres'
+  password: 'postgres'
+  schema: 'ebook'
+  maxIdle: 2
+  maxOpen: 10
+  autoMigrate: false
+
+blobStore:
+  endpoint: 'minio:9000'
+  accessKeyId: 'minioadmin'
+  accessSecretKey: 'minioadmin'
+  useSSL: false
+  bookCoverBucket: 'ebook-covers'
+
+replicaCount: 3
+
+service:
+  type: NodePort
+  port: 8070
+  nodePort: 30001

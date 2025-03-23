@@ -93,3 +93,29 @@ sops/encrypt/secret:
 sops/edit/secret:
 	SOPS_AGE_KEY_FILE=age.agekey \
 	sops edit --input-type dotenv --output-type dotenv deploy/kustomize/overlays/prod/.secret.encrypted.env
+
+.PHONY: helm/template/dev
+helm/template/dev:
+	helm template deploy/helm --values=deploy/helm/values-dev.yaml
+
+.PHONY: helm/template/prod
+helm/template/prod:
+	helm template deploy/helm --values=deploy/helm/values-prod.yaml
+
+.PHONY: helm/install/dev
+helm/install/dev:
+	helm upgrade --install libman-dev --values=deploy/helm/values-dev.yaml \
+		--set fullnameOverride=libman-dev deploy/helm
+
+.PHONY: helm/uninstall/dev
+helm/uninstall/dev:
+	helm uninstall libman-dev
+
+.PHONY: helm/install/prod
+helm/install/prod:
+	helm upgrade --install libman-prod --values=deploy/helm/values-prod.yaml \
+		--set fullnameOverride=libman-prod deploy/helm
+
+.PHONY: helm/uninstall/prod
+helm/uninstall/prod:
+	helm uninstall libman-prod
