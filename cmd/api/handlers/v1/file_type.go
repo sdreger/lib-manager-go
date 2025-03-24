@@ -43,10 +43,10 @@ func (cnt *FileTypeController) GetFileTypes(ctx context.Context, w http.Response
 		return sortErr
 	}
 
-	FileTypePage, err := cnt.service.GetFileTypes(ctx, page, sort)
+	fileTypePage, err := cnt.service.GetFileTypes(ctx, page, sort)
 	if err != nil {
 		return err
 	}
 
-	return response.RenderDataJSON(w, http.StatusOK, FileTypePage)
+	return response.RenderDataJSON(w, http.StatusOK, fileTypePage)
 }

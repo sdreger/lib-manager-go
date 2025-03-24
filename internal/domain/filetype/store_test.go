@@ -76,9 +76,9 @@ func (s *TestStoreSuite) Test_Lookup_OrderByName() {
 	requestValues := map[string][]string{"page": {"1"}, "size": {"100"}, "sort": {"name,asc"}}
 	response, total, err := performLookupRequest(s, requestValues)
 	s.Require().NoError(err, "failed to perform lookup request")
-	booksFound := 4
-	s.Equal(int64(booksFound), total)
-	s.Len(response, booksFound)
+	fileTypesFound := 4
+	s.Equal(int64(fileTypesFound), total)
+	s.Len(response, fileTypesFound)
 	s.Require().Less(response[0].Name, response[1].Name)
 	s.Require().Less(response[1].Name, response[2].Name)
 	s.Require().Less(response[2].Name, response[3].Name)
@@ -88,10 +88,10 @@ func (s *TestStoreSuite) Test_Lookup_OrderByName_OnePage() {
 	requestValues := map[string][]string{"page": {"2"}, "size": {"2"}, "sort": {"id,desc"}}
 	response, total, err := performLookupRequest(s, requestValues)
 	s.Require().NoError(err, "failed to perform lookup request")
-	booksFound := 2
+	fileTypesFound := 2
 	expectedTotal := int64(4)
 	s.Equal(expectedTotal, total)
-	s.Len(response, booksFound)
+	s.Len(response, fileTypesFound)
 	s.Require().Greater(response[0].ID, response[1].ID)
 }
 
