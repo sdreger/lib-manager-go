@@ -75,6 +75,10 @@ func run(logger *slog.Logger) (err error) {
 		return err
 	}
 	logger.Info("BLOB store client initialized", "endpoint", appConfig.BLOBStore.MinioEndpoint)
+	defer func() {
+		logger.Info("closing BLOB store client")
+		blobStore.Close()
+	}()
 
 	// ==================== Create BLOB storage buckets ====================
 	err = blobStore.CreateBuckets(mainCtx)
