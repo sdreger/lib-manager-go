@@ -8,6 +8,7 @@ import (
 	handlersV1 "github.com/sdreger/lib-manager-go/cmd/api/handlers/v1"
 	"github.com/sdreger/lib-manager-go/internal/blobtstore"
 	"github.com/sdreger/lib-manager-go/internal/config"
+	"github.com/sdreger/lib-manager-go/internal/database"
 	"github.com/sdreger/lib-manager-go/internal/middleware"
 	"log/slog"
 	"net/http"
@@ -57,7 +58,8 @@ func (router *Router) registerApplicationMiddlewares() {
 // registerRouteHandlers - init REST controllers, and delegate route handlers registration to them
 func (router *Router) registerRouteHandlers(db *sqlx.DB, blobStore *blobtstore.MinioStore) {
 	logger := router.logger
-	system.NewController(logger).RegisterRoutes(router)
+	// the custom DB data type is only needed for system controller to perform health checks
+	system.NewController(logger, (*database.DB)(db), blobStore).RegisterRoutes(router)
 	handlersV1.NewBookController(logger, db).RegisterRoutes(router)
 	handlersV1.NewCoverController(logger, blobStore).RegisterRoutes(router)
 	handlersV1.NewFileTypeController(logger, db).RegisterRoutes(router)
