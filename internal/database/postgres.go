@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -22,6 +23,18 @@ const (
 	sslModeKey    = "sslmode"
 	searchPathKey = "search_path"
 )
+
+// DB - type alias for 'sqlx.DB', used to implement the 'HealthChecker' interface
+type DB sqlx.DB
+
+// HealthCheck - pings a DB to figure out if it's alive
+func (db *DB) HealthCheck(ctx context.Context) error {
+	return db.PingContext(ctx)
+}
+
+func (db *DB) HealthCheckID() string {
+	return "postgres"
+}
 
 // Open - opens a DB connection using provided configuration
 func Open(config config.DBConfig) (*sqlx.DB, error) {
@@ -51,7 +64,7 @@ func Open(config config.DBConfig) (*sqlx.DB, error) {
 	return db, nil
 }
 
-// Migrate - migrates the DB schema to the latest revision, if enabled in the DB config
+// Migrate - migrates the database schema to the latest revision, if enabled in the config
 func Migrate(logger *slog.Logger, dbConfig config.DBConfig, db *sql.DB) error {
 	if dbConfig.AutoMigrate {
 		lockAcquirePeriod := uint64(10)

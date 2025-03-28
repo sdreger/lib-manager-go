@@ -84,6 +84,13 @@ func TestOpenDBConnectionAndMigrate(t *testing.T) {
 		err = Migrate(logger, dbConfig, dbConnection.DB)
 		assert.NoError(t, err, "error running migration")
 	})
+
+	t.Run("success healthcheck", func(t *testing.T) {
+		pg := (*DB)(dbConnection)
+		err = pg.HealthCheck(ctx)
+		require.NoError(t, err, "healthcheck error")
+		require.Equal(t, "postgres", pg.HealthCheckID())
+	})
 }
 
 func openDBConnection(t *testing.T, dbConfig config.DBConfig, pg *postgres.PostgresContainer) (*sqlx.DB, error) {
