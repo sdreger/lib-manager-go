@@ -12,10 +12,11 @@ import (
 )
 
 type MinioStore struct {
-	config          config.BLOBStoreConfig
-	client          *minio.Client
-	logger          *slog.Logger
-	coverBucketName string
+	config                config.BLOBStoreConfig
+	client                *minio.Client
+	logger                *slog.Logger
+	coverBucketName       string
+	healthCheckCancelFunc context.CancelFunc
 }
 
 func NewMinioStore(logger *slog.Logger, config config.BLOBStoreConfig) (*MinioStore, error) {
@@ -29,11 +30,18 @@ func NewMinioStore(logger *slog.Logger, config config.BLOBStoreConfig) (*MinioSt
 		return nil, clientErr
 	}
 
+	// start health checks with the specified interval
+	cancelFunc, clientErr := client.HealthCheck(config.MinioHealthCheckInterval)
+	if clientErr != nil {
+		return nil, clientErr
+	}
+
 	return &MinioStore{
-		config:          config,
-		client:          client,
-		logger:          logger,
-		coverBucketName: config.BookCoverBucket,
+		config:                config,
+		client:                client,
+		logger:                logger,
+		coverBucketName:       config.BookCoverBucket,
+		healthCheckCancelFunc: cancelFunc,
 	}, nil
 }
 
@@ -57,6 +65,22 @@ func (s *MinioStore) getObject(ctx context.Context, bucketName string, filePath 
 
 func (s *MinioStore) getObjectStats(ctx context.Context, bucketName string, filePath string) (minio.ObjectInfo, error) {
 	return s.client.StatObject(ctx, bucketName, filePath, minio.StatObjectOptions{})
+}
+
+func (s *MinioStore) HealthCheck(ctx context.Context) error {
+	if online := s.client.IsOnline(); online {
+		return nil
+	} else {
+		return errors.New("minio is offline")
+	}
+}
+
+func (s *MinioStore) HealthCheckID() string {
+	return "minio"
+}
+
+func (s *MinioStore) Close() {
+	s.healthCheckCancelFunc()
 }
 
 func getMinioClient(endpoint, accessKeyID, secretAccessKey string, useSSL bool) (*minio.Client, error) {

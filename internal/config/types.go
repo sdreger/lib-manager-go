@@ -41,11 +41,12 @@ type DBConfig struct {
 }
 
 type BLOBStoreConfig struct {
-	BookCoverBucket      string `env:"BOOK_COVER_BUCKET" envDefault:"ebook-covers"`
-	MinioEndpoint        string `env:"MINIO_ENDPOINT" envDefault:"127.0.0.1:9000"`
-	MinioAccessKeyID     string `env:"MINIO_ACCESS_KEY_ID" envDefault:"minio-access-key"`
-	MinioSecretAccessKey string `env:"MINIO_ACCESS_SECRET_KEY" envDefault:"minio-secret-key"`
-	MinioUseSSL          bool   `env:"MINIO_USE_SSL" envDefault:"false"`
+	BookCoverBucket          string        `env:"BOOK_COVER_BUCKET" envDefault:"ebook-covers"`
+	MinioEndpoint            string        `env:"MINIO_ENDPOINT" envDefault:"127.0.0.1:9000"`
+	MinioAccessKeyID         string        `env:"MINIO_ACCESS_KEY_ID" envDefault:"minio-access-key"`
+	MinioSecretAccessKey     string        `env:"MINIO_ACCESS_SECRET_KEY" envDefault:"minio-secret-key"`
+	MinioUseSSL              bool          `env:"MINIO_USE_SSL" envDefault:"false"`
+	MinioHealthCheckInterval time.Duration `env:"MINIO_HEALTHCHECK_INTERVAL" envDefault:"10s"`
 }
 
 type BuildInfo struct {

@@ -9,7 +9,7 @@ on:
       - deploy/**
 
 env:
-  NEXT_TAG: 0.0.3
+  NEXT_TAG: 0.0.4
   REGISTRY: "gitea.dreger.lan"
   IMAGE_NAME: ${{ gitea.repository }}
 

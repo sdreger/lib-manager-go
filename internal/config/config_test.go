@@ -34,11 +34,12 @@ var (
 	defaultAutoMigrate             = false
 	defaultMigrationLockTimeoutSec = uint64(300)
 
-	defaultBlobStoreBookCoverBucket      = "ebook-covers"
-	defaultBlobStoreMinioEndpoint        = "127.0.0.1:9000"
-	defaultBlobStoreMinioAccessKeyID     = "minio-access-key"
-	defaultBlobStoreMinioSecretAccessKey = "minio-secret-key"
-	defaultBlobStoreMinioUseSSL          = false
+	defaultBlobStoreBookCoverBucket          = "ebook-covers"
+	defaultBlobStoreMinioEndpoint            = "127.0.0.1:9000"
+	defaultBlobStoreMinioAccessKeyID         = "minio-access-key"
+	defaultBlobStoreMinioSecretAccessKey     = "minio-secret-key"
+	defaultBlobStoreMinioUseSSL              = false
+	defaultBlobstoreMinioHealthCheckInterval = time.Duration(10000000000) // 10s
 )
 
 func TestNewConfigDefaults(t *testing.T) {
@@ -80,6 +81,7 @@ func TestNewConfigDefaults(t *testing.T) {
 			assert.Equal(t, defaultBlobStoreMinioAccessKeyID, config.BLOBStore.MinioAccessKeyID)
 			assert.Equal(t, defaultBlobStoreMinioSecretAccessKey, config.BLOBStore.MinioSecretAccessKey)
 			assert.Equal(t, defaultBlobStoreMinioUseSSL, config.BLOBStore.MinioUseSSL)
+			assert.Equal(t, defaultBlobstoreMinioHealthCheckInterval, config.BLOBStore.MinioHealthCheckInterval)
 		}
 	}
 }
@@ -202,12 +204,14 @@ func TestNewConfigCustomBLOBStoreEnv(t *testing.T) {
 	customBlobStoreMinioAccessKeyID := "custom-minio-access-key"
 	customBlobStoreMinioSecretAccessKey := "custom-minio-secret-key"
 	customBlobStoreMinioUseSSL := true
+	customBlobStoreMinioHealthCheckInterval := time.Duration(10000000000)
 
 	_ = os.Setenv(getEnvKey("BLOB_STORE_BOOK_COVER_BUCKET"), customBlobStoreBookCoverBucket)
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ENDPOINT"), customBlobStoreMinioEndpoint)
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"), customBlobStoreMinioAccessKeyID)
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"), customBlobStoreMinioSecretAccessKey)
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"), strconv.FormatBool(customBlobStoreMinioUseSSL))
+	_ = os.Setenv(getEnvKey("MINIO_HEALTHCHECK_INTERVAL"), customBlobStoreMinioHealthCheckInterval.String())
 
 	defer func() {
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_BOOK_COVER_BUCKET"))
@@ -215,6 +219,7 @@ func TestNewConfigCustomBLOBStoreEnv(t *testing.T) {
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"))
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"))
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"))
+		_ = os.Unsetenv(getEnvKey("MINIO_HEALTHCHECK_INTERVAL"))
 	}()
 
 	config, err := New()
@@ -225,6 +230,7 @@ func TestNewConfigCustomBLOBStoreEnv(t *testing.T) {
 		assert.Equal(t, customBlobStoreMinioAccessKeyID, config.BLOBStore.MinioAccessKeyID)
 		assert.Equal(t, customBlobStoreMinioSecretAccessKey, config.BLOBStore.MinioSecretAccessKey)
 		assert.Equal(t, customBlobStoreMinioUseSSL, config.BLOBStore.MinioUseSSL)
+		assert.Equal(t, customBlobStoreMinioHealthCheckInterval, config.BLOBStore.MinioHealthCheckInterval)
 	}
 }
 
@@ -255,6 +261,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"), "")
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"), "")
 	_ = os.Setenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"), "")
+	_ = os.Setenv(getEnvKey("MINIO_HEALTHCHECK_INTERVAL"), "")
 
 	defer func() {
 		_ = os.Unsetenv(getEnvKey("HTTP_HOST"))
@@ -281,6 +288,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_KEY_ID"))
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_ACCESS_SECRET_KEY"))
 		_ = os.Unsetenv(getEnvKey("BLOB_STORE_MINIO_USE_SSL"))
+		_ = os.Unsetenv(getEnvKey("MINIO_HEALTHCHECK_INTERVAL"))
 	}()
 
 	config, err := New()
@@ -316,6 +324,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 			assert.Equal(t, defaultBlobStoreMinioAccessKeyID, config.BLOBStore.MinioAccessKeyID)
 			assert.Equal(t, defaultBlobStoreMinioSecretAccessKey, config.BLOBStore.MinioSecretAccessKey)
 			assert.Equal(t, defaultBlobStoreMinioUseSSL, config.BLOBStore.MinioUseSSL)
+			assert.Equal(t, defaultBlobstoreMinioHealthCheckInterval, config.BLOBStore.MinioHealthCheckInterval)
 		}
 	}
 }
