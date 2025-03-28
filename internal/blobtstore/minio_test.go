@@ -84,6 +84,7 @@ func TestMinioStore_HealthCheck(t *testing.T) {
 	minioStore, minioContainer := newTestMinioStore(t)
 	defer minioStore.Close()
 
+	time.Sleep(3 * time.Second)
 	err := minioStore.HealthCheck(ctx)
 	require.NoError(t, err, "failed to perform a healthcheck")
 
