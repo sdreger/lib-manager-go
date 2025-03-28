@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	statusFail healthCHeckStatus = "FAIL"
-	statusOK   healthCHeckStatus = "OK"
+	statusFail healthCheckStatus = "FAIL"
+	statusOK   healthCheckStatus = "OK"
 )
 
 type HealthChecker interface {
@@ -18,7 +18,7 @@ type HealthChecker interface {
 	HealthCheckID() string
 }
 
-type healthCHeckStatus string
+type healthCheckStatus string
 
 type healthCheckResult struct {
 	id    string
@@ -56,7 +56,7 @@ func (cnt *Controller) ReadinessProbe(ctx context.Context, w http.ResponseWriter
 	defer cnt.closeBody(req)
 
 	resultChan := make(chan healthCheckResult, len(cnt.healthCheckers))
-	data := make(map[string]healthCHeckStatus, len(cnt.healthCheckers))
+	data := make(map[string]healthCheckStatus, len(cnt.healthCheckers))
 	for _, healthChecker := range cnt.healthCheckers {
 		data[healthChecker.HealthCheckID()] = statusFail
 		go func(hc HealthChecker) {

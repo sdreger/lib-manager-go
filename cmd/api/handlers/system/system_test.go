@@ -18,10 +18,11 @@ import (
 func TestController_RegisterRoutes(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
 	testRegistrar := handlers.RouteRegistrarMock{}
-	h := NewController(logger, nil, nil)
+	h := NewController(logger)
 	h.RegisterRoutes(&testRegistrar)
 
 	assert.True(t, testRegistrar.IsRouteRegistered("GET /livez", h.LivenessProbe))
+	assert.True(t, testRegistrar.IsRouteRegistered("GET /readyz", h.ReadinessProbe))
 }
 
 func TestLivenessProbe(t *testing.T) {
