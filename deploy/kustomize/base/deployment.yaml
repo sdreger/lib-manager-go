@@ -35,6 +35,10 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /health
+              path: /livez
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /readyz
               port: http
           resources: {}
