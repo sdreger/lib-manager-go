@@ -1,6 +1,7 @@
 package paging
 
 import (
+	"fmt"
 	"github.com/sdreger/lib-manager-go/cmd/api/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,8 +59,10 @@ func TestNewSort(t *testing.T) {
 				require.Error(t, err)
 				assert.ErrorAs(t, err, &errors.ValidationError{})
 			} else {
+				orderFieldPrefix := "ebook.books"
 				require.NoError(t, err)
-				assert.Equal(t, tc.expectedOrderBy, sort.GetOrderBy())
+				expectedOrderBy := fmt.Sprintf("%s.%s", orderFieldPrefix, tc.expectedOrderBy)
+				assert.Equal(t, expectedOrderBy, sort.GetOrderBy(orderFieldPrefix))
 			}
 		})
 	}
