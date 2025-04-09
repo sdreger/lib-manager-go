@@ -79,7 +79,7 @@ func (s *DBStore) Lookup(ctx context.Context, page paging.PageRequest, sort pagi
 		LeftJoin("ebook.book_tag bt on books.id = bt.book_id").
 		GroupBy(`books.id, title, subtitle, isbn10, isbn13, asin, pages, 
 			           pub_date, book_file_size, cover_file_name, publisher, language`).
-		OrderBy(sort.GetOrderBy()).
+		OrderBy(sort.GetOrderBy("ebook.books")).
 		Limit(page.Limit()).
 		Offset(page.Offset())
 

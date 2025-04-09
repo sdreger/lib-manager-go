@@ -18,7 +18,7 @@ func NewDBStore(db *sqlx.DB) *DBStore {
 func (s *DBStore) Lookup(ctx context.Context, page paging.PageRequest, sort paging.Sort) ([]LookupItem, int64, error) {
 
 	query := fmt.Sprintf("SELECT id, name FROM ebook.file_types ORDER BY %s LIMIT $1 OFFSET $2",
-		sort.GetOrderBy())
+		sort.GetOrderBy("ebook.file_types"))
 
 	var rows []lookupEntity
 	err := s.db.SelectContext(ctx, &rows, query, page.Limit(), page.Offset())

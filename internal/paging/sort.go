@@ -60,8 +60,8 @@ func NewSort(queryValues url.Values, allowedSortFields []string) (Sort, error) {
 	}, nil
 }
 
-func (s Sort) GetOrderBy() string {
-	return fmt.Sprintf("%s %s", s.field, s.direction)
+func (s Sort) GetOrderBy(fieldPrefix string) string {
+	return fmt.Sprintf("%s.%s %s", fieldPrefix, s.field, s.direction)
 }
 
 func isFieldAllowed(field string, allowedSortFields []string) bool {
