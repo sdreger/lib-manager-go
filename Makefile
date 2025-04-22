@@ -27,7 +27,7 @@ test:
 .PHONY: cover
 cover:
 	go test -v -race -shuffle=on -buildvcs -coverprofile=/tmp/cover.out.tmp ./...
-	grep -v "_mock.go" /tmp/cover.out.tmp > /tmp/cover.out
+	grep -E -v "_mock.go|tests/*" /tmp/cover.out.tmp > /tmp/cover.out
 	go tool cover -html=/tmp/cover.out
 
 # audit: perform full audit check
@@ -59,7 +59,7 @@ kind/delete-cluster:
 
 .PHONY: kind/load-image
 kind/load-image:
-	kind load docker-image --name ${KIND_CLUSTER_NAME} ${IMAGE_REGISTRY}:latest
+	kind load docker-image --name ${KIND_CLUSTER_NAME} ${IMAGE_REGISTRY}:3d54164
 
 .PHONY: kustomize/manifests/dev
 kustomize/manifests/dev:

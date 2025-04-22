@@ -5,12 +5,10 @@ import (
 	"context"
 	"github.com/minio/minio-go/v7"
 	"github.com/sdreger/lib-manager-go/internal/config"
+	"github.com/sdreger/lib-manager-go/internal/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	testMinio "github.com/testcontainers/testcontainers-go/modules/minio"
 	"io"
-	"log"
 	"log/slog"
 	"os"
 	"testing"
@@ -29,8 +27,9 @@ const (
 func TestNewMinioStore(t *testing.T) {
 	ctx := context.Background()
 
-	minioStore, _ := newTestMinioStore(t)
-	defer minioStore.Close()
+	minioContainer := tests.StartMinioTestContainer(t)
+	minioConfig := tests.GetTestMinioConfig(t, minioContainer)
+	minioStore := setUpTestMinioStore(t, minioConfig)
 
 	err := minioStore.CreateBuckets(ctx)
 	require.NoError(t, err, "failed to create buckets")
@@ -80,16 +79,15 @@ func TestNewMinioStore_CanNotCreateClient(t *testing.T) {
 
 func TestMinioStore_HealthCheck(t *testing.T) {
 	ctx := context.Background()
-
-	minioStore, minioContainer := newTestMinioStore(t)
-	defer minioStore.Close()
+	minioContainer := tests.StartMinioTestContainer(t)
+	minioConfig := tests.GetTestMinioConfig(t, minioContainer)
+	minioStore := setUpTestMinioStore(t, minioConfig)
 
 	time.Sleep(3 * time.Second)
 	err := minioStore.HealthCheck(ctx)
 	require.NoError(t, err, "failed to perform a healthcheck")
 
-	err = testcontainers.TerminateContainer(minioContainer)
-	require.NoError(t, err, "failed to terminate container")
+	tests.TerminateMinioContainer(t, minioContainer)
 
 	// a client call should be done to mark the client as 'offline'
 	err = minioStore.CreateBuckets(ctx)
@@ -111,32 +109,17 @@ func TestMinioStore_HealthCheckStartError(t *testing.T) {
 	require.Error(t, err, "failed to create minio store")
 }
 
-func newTestMinioStore(t *testing.T) (*MinioStore, *testMinio.MinioContainer) {
-	ctx := context.Background()
+func setUpTestMinioStore(t *testing.T, blobStoreConfig config.BLOBStoreConfig) *MinioStore {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
-
-	minioContainer, err := testMinio.Run(ctx, "quay.io/minio/minio:RELEASE.2025-02-18T16-25-55Z")
-	t.Cleanup(func() {
-		if err := testcontainers.TerminateContainer(minioContainer); err != nil {
-			log.Printf("failed to terminate container: %s", err)
-		}
-	})
-	require.NoError(t, err, "failed to start minio container")
-
-	endpoint, err := minioContainer.ConnectionString(ctx)
-	require.NoError(t, err, "failed to get container endpoint")
-
-	appConfig, err := config.New()
-	require.NoError(t, err, "failed to load app config")
-	blobStoreConfig := appConfig.BLOBStore
-	blobStoreConfig.MinioEndpoint = endpoint
-	blobStoreConfig.MinioAccessKeyID = minioContainer.Username
-	blobStoreConfig.MinioSecretAccessKey = minioContainer.Password
 
 	minioStore, err := NewMinioStore(logger, blobStoreConfig)
 	require.NoError(t, err, "failed to create minio store")
 
-	return minioStore, minioContainer
+	t.Cleanup(func() {
+		minioStore.Close()
+	})
+
+	return minioStore
 }
 
 func storeBookCover(ctx context.Context, minioStore *MinioStore, path string, content string) error {
