@@ -242,7 +242,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 	_ = os.Setenv(getEnvKey("HTTP_IDLE_TIMEOUT"), "")
 	_ = os.Setenv(getEnvKey("HTTP_SHUTDOWN_TIMEOUT"), "")
 
-	_ = os.Setenv(getEnvKey("DB_Driver"), "")
+	_ = os.Setenv(getEnvKey("DB_DRIVER"), "")
 	_ = os.Setenv(getEnvKey("DB_HOST"), "")
 	_ = os.Setenv(getEnvKey("DB_PORT"), "")
 	_ = os.Setenv(getEnvKey("DB_USER"), "")
@@ -270,7 +270,7 @@ func TestNewConfigWithEmptyEnv(t *testing.T) {
 		_ = os.Unsetenv(getEnvKey("HTTP_WRITE_TIMEOUT"))
 		_ = os.Unsetenv(getEnvKey("HTTP_IDLE_TIMEOUT"))
 		_ = os.Unsetenv(getEnvKey("HTTP_SHUTDOWN_TIMEOUT"))
-		_ = os.Unsetenv(getEnvKey("DB_Driver"))
+		_ = os.Unsetenv(getEnvKey("DB_DRIVER"))
 		_ = os.Unsetenv(getEnvKey("DB_HOST"))
 		_ = os.Unsetenv(getEnvKey("DB_PORT"))
 		_ = os.Unsetenv(getEnvKey("DB_USER"))
@@ -372,5 +372,5 @@ func TestNewConfigWithWrongPort(t *testing.T) {
 }
 
 func getEnvKey(key string) string {
-	return envPrefix + key
+	return EnvPrefix + key
 }

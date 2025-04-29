@@ -5,14 +5,14 @@ import (
 	"runtime/debug"
 )
 
-const envPrefix = "LIB_MANAGER_"
+const EnvPrefix = "LIB_MANAGER_"
 
 // For the testing purpose
 var buildInfoFunc = debug.ReadBuildInfo
 
 func New() (AppConfig, error) {
 	var cfg AppConfig
-	if err := env.ParseWithOptions(&cfg, env.Options{Prefix: envPrefix}); err != nil {
+	if err := env.ParseWithOptions(&cfg, env.Options{Prefix: EnvPrefix}); err != nil {
 		return AppConfig{}, err
 	}
 
