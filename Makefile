@@ -11,6 +11,13 @@ PACT_PROVIDER_NAME := lib-manager-go
 PACT_VERSION_COMMIT := $(shell git describe --tags --abbrev=0)
 PACT_VERSION_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
+.PHONY: bootstrap/macos
+bootstrap/macos:
+	brew install mockery golangci-lint govulncheck \
+		kind kubernetes-cli kube-linter helm  \
+		sops age kubeseal \
+		fluxcd/tap/flux hey
+
 # lint: run lint checks (https://golangci-lint.run/welcome/quick-start/)
 .PHONY: lint
 lint:
