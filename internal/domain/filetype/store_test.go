@@ -21,7 +21,7 @@ type TestStoreSuite struct {
 func (s *TestStoreSuite) SetupSuite() {
 	testContainer := tests.StartDBTestContainer(s.T())
 	dbConfig := tests.GetTestDBConfig(s.T(), testContainer)
-	connection := tests.SetUpTestDB(&s.Suite, dbConfig, testContainer)
+	connection := tests.SetUpTestDB(s.Suite.Require(), dbConfig, testContainer)
 
 	s.store = NewDBStore(connection)
 	s.db = connection

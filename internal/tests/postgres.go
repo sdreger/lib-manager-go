@@ -6,7 +6,6 @@ import (
 	"github.com/sdreger/lib-manager-go/internal/config"
 	"github.com/sdreger/lib-manager-go/internal/database"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -18,9 +17,10 @@ import (
 )
 
 const (
-	dbUser     = "test"
-	dBPassword = "test"
-	dbName     = "test"
+	dbSnapshotTimeout = 5 * time.Second
+	dbUser            = "test"
+	dBPassword        = "test"
+	dbName            = "test"
 )
 
 func StartDBTestContainer(t *testing.T) *postgres.PostgresContainer {
@@ -66,23 +66,25 @@ func GetTestDBConfig(t *testing.T, pg *postgres.PostgresContainer) config.DBConf
 	return dbConfig
 }
 
-func SetUpTestDB(s *suite.Suite, dbConfig config.DBConfig, testContainer *postgres.PostgresContainer) *sqlx.DB {
+func SetUpTestDB(s *require.Assertions, dbConfig config.DBConfig, testContainer *postgres.PostgresContainer) *sqlx.DB {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
 	connection, err := database.Open(dbConfig)
-	s.Require().NoError(err, "failed to open database connection")
+	s.NoError(err, "failed to open database connection")
 
 	err = database.Migrate(logger, dbConfig, connection.DB)
-	s.Require().NoError(err, "failed to perform database migration")
+	s.NoError(err, "failed to perform database migration")
 
 	err = connection.Close() // required, to be able to create a testContainer snapshot
-	s.Require().NoError(err, "failed to close database connection")
+	s.NoError(err, "failed to close database connection")
 
-	err = testContainer.Snapshot(s.T().Context())
-	s.Require().NoError(err, "failed to create database snapshot")
+	snapshotCtx, snapshotCancelFunc := context.WithTimeout(context.Background(), dbSnapshotTimeout)
+	defer snapshotCancelFunc()
+	err = testContainer.Snapshot(snapshotCtx)
+	s.NoError(err, "failed to create database snapshot")
 
 	connection, err = database.Open(dbConfig)
-	s.Require().NoError(err, "failed to open database connection")
+	s.NoError(err, "failed to open database connection")
 
 	return connection
 }
