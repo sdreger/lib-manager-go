@@ -10,6 +10,8 @@ formatter: goimports
 log-level: info
 recursive: false
 template: testify
+template-data:
+  mock-build-tags: '!build'
 packages:
   github.com/sdreger/lib-manager-go/cmd/api/handlers/v1:
     interfaces:

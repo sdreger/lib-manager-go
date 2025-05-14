@@ -10,7 +10,7 @@ ADD go.mod go.sum /lib-manager-api/
 WORKDIR /lib-manager-api
 RUN go mod download
 ADD . /lib-manager-api
-RUN CGO_ENABLED=0 go build -buildvcs=true -o app github.com/sdreger/lib-manager-go/cmd/api
+RUN CGO_ENABLED=0 go build -tags build -buildvcs=true -o app github.com/sdreger/lib-manager-go/cmd/api
 
 FROM base AS final
 
