@@ -51,7 +51,7 @@ audit: lint test vulncheck
 
 .PHONY: mockgen
 mockgen:
-	go run github.com/vektra/mockery/v2@v2.53.3
+	go run github.com/vektra/mockery/v3@v3.2.5
 
 # docker/build: build the Docker image
 .PHONY: docker/build
