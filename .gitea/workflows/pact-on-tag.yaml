@@ -1,19 +1,23 @@
 name: Run Pact integration tests for a new tag
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        required: false
+        description: Optional git tag for verification
   push:
     tags:
       - '*'
 
 jobs:
   pact-integration-test:
-    if: gitea.event.pull_request.merged == true
     runs-on: ubuntu-22.04
-    outputs:
-      latest_git_tag: ${{ steps.git_tag.outputs.LATEST_GIT_TAG }}
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           fetch-tags: true
       - name: Set up Golang
         uses: actions/setup-go@v5
@@ -24,12 +28,28 @@ jobs:
       - name: Get latest Git tag
         id: git_tag
         run: |
-          echo "LATEST_GIT_TAG=$(git describe --tags --abbrev=0)" >> ${GITHUB_OUTPUT}
+          echo "LATEST_GIT_TAG=$(git describe --tags --abbrev=0)" >> ${GITHUB_ENV}
+      - name: Pact Go install
+        env:
+          PACT_GO_VERSION: 2.4.1
+          PACT_DOWNLOAD_DIR: /opt/pact/lib
+        run: |
+          go install github.com/pact-foundation/pact-go/v2@v${PACT_GO_VERSION}
+          pact-go -l DEBUG install --libDir ${PACT_DOWNLOAD_DIR};
+      - name: Add Pact broker CA
+        env:
+          CA_SECRET: ${{ secrets.PACT_BROKER_CA }}
+        shell: bash
+        run: |
+          printf '%s' "${CA_SECRET}" > /etc/ssl/certs/pact-broker-ca.pem
       - name: Run integration tests
         env:
-          LATEST_GIT_TAG: ${{ needs.git_tag.outputs.latest_git_tag }}
+          LATEST_GIT_TAG: ${{ inputs.tag || env.LATEST_GIT_TAG }}
         run: |
-          PACT_DO_NOT_TRACK=true PACT_PUBLISH_RESULTS=true \
-          PACT_BROKER_URL=${{ vars.PACT_BROKER_URL }} PACT_PROVIDER_NAME=lib-manager-go \
-          PACT_VERSION_BRANCH=main PACT_VERSION_COMMIT=${{ env.LATEST_GIT_TAG }} \
+          echo "Latest Tag: ${LATEST_GIT_TAG}"
+          git checkout ${LATEST_GIT_TAG}
+          SSL_CERT_FILE=/etc/ssl/certs/pact-broker-ca.pem \
+          PACT_TEST=true PACT_DO_NOT_TRACK=true PACT_PUBLISH_RESULTS=true \
+          PACT_PROVIDER_NAME=lib-manager-go PACT_BROKER_URL=${{ vars.PACT_BROKER_URL }} \
+          PACT_VERSION_BRANCH=main PACT_VERSION_COMMIT=${LATEST_GIT_TAG} \
           go test -tags=integration -count=1 github.com/sdreger/lib-manager-go/cmd/api -run 'TestPactProvider' -v
