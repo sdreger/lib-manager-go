@@ -1,10 +1,8 @@
-name: Create a new tag and build a new image
+name: Run Pact integration tests for a new tag
 on:
-  pull_request:
-    types:
-      - closed
-    branches:
-      - main
+  push:
+    tags:
+      - '*'
 
 jobs:
   pact-integration-test:
@@ -15,6 +13,8 @@ jobs:
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
       - name: Set up Golang
         uses: actions/setup-go@v5
         with:
