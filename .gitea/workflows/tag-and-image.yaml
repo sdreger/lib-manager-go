@@ -7,7 +7,7 @@ on:
       - main
 
 env:
-  NEXT_TAG: 0.0.5
+  NEXT_TAG: 0.0.6
   REGISTRY: "gitea.dreger.lan"
   IMAGE_NAME: ${{ gitea.repository }}
 
