@@ -1,27 +1,29 @@
 # https://vektra.github.io/mockery/latest/configuration
 # --------------------------------------------------
-# V2 deprecations
-issue-845-fix: True
-resolve-type-alias: False
-# --------------------------------------------------
-with-expecter: True
+all: false
+dir: '{{.InterfaceDir}}'
+structname: 'Mock{{.InterfaceName}}'
+pkgname: '{{.SrcPackageName}}'
 filename: "{{.InterfaceName | snakecase}}_mock.go"
-dir: "{{.InterfaceDir}}"
-mockname: "Mock{{.InterfaceName}}"
-outpkg: "{{.PackageName}}"
-inpackage: True
+force-file-write: true
+formatter: goimports
+log-level: info
+recursive: false
+template: testify
+template-data:
+  mock-build-tags: '!build'
 packages:
   github.com/sdreger/lib-manager-go/cmd/api/handlers/v1:
     interfaces:
-      BookService:
-      CoverService:
-      FileTypeService:
+      BookService: {}
+      CoverService: {}
+      FileTypeService: {}
   github.com/sdreger/lib-manager-go/internal/domain/book:
     interfaces:
-      Store:
+      Store: {}
   github.com/sdreger/lib-manager-go/internal/domain/cover:
     interfaces:
-      BlobStore:
+      BlobStore: {}
   github.com/sdreger/lib-manager-go/internal/domain/filetype:
     interfaces:
-      Store:
+      Store: {}

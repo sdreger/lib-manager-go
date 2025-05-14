@@ -1,29 +1,35 @@
-name: Run Pact contract verification
+name: Create a new tag and build a new image
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Application version'
-        required: true
-        default: '0.0.6'
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
 
 jobs:
   pact-integration-test:
+    if: gitea.event.pull_request.merged == true
     runs-on: ubuntu-22.04
+    outputs:
+      latest_git_tag: ${{ steps.git_tag.outputs.LATEST_GIT_TAG }}
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ gitea.event.inputs.version }}
       - name: Set up Golang
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Download dependencies
         run: go mod download
+      - name: Get latest Git tag
+        id: git_tag
+        run: |
+          echo "LATEST_GIT_TAG=$(git describe --tags --abbrev=0)" >> ${GITHUB_OUTPUT}
       - name: Run integration tests
+        env:
+          LATEST_GIT_TAG: ${{ needs.git_tag.outputs.latest_git_tag }}
         run: |
           PACT_DO_NOT_TRACK=true PACT_PUBLISH_RESULTS=true \
           PACT_BROKER_URL=${{ vars.PACT_BROKER_URL }} PACT_PROVIDER_NAME=lib-manager-go \
-          PACT_VERSION_BRANCH=main PACT_VERSION_COMMIT=${{ gitea.event.inputs.version }} \
+          PACT_VERSION_BRANCH=main PACT_VERSION_COMMIT=${{ env.LATEST_GIT_TAG }} \
           go test -tags=integration -count=1 github.com/sdreger/lib-manager-go/cmd/api -run 'TestPactProvider' -v
