@@ -1,0 +1,52 @@
+when:
+  event: manual
+
+clone:
+  git:
+    image: quay.io/thegeeklab/wp-git-clone
+    settings:
+      depth: 0
+      tags: true
+
+steps:
+  - name: pact-contract-verification
+    image: golang:1.24.3
+    environment:
+      PACT_GO_VERSION: 2.4.1
+      PACT_GO_DOWNLOAD_DIR: /opt/pact/lib
+      PACT_BROKER_CA_CERT: /opt/pact/pact-broker-ca.pem
+      PACT_BROKER_URL:
+        from_secret: PACT_BROKER_URL
+      PACT_BROKER_CA:
+        from_secret: PACT_BROKER_CA
+      DOCKER_HOST: "tcp://docker:2376"
+      DOCKER_CERT_PATH: "/dind-certs/client"
+      DOCKER_TLS_VERIFY: "1"
+    volumes:
+      - /opt/woodpeckerci/dind-certs:/dind-certs
+    commands:
+      - apk update && apk add --no-cache git
+      - echo "Pack Go Version - $${PACT_GO_VERSION}"
+      - export LATEST_GIT_TAG=$(git describe --tags --abbrev=0)
+      - echo "Sha - ${sha}"
+      - git checkout ${sha}
+      - mkdir -p /opt/pact && printf '%s' "$${PACT_BROKER_CA}" > $${PACT_BROKER_CA_CERT}
+      - go install github.com/pact-foundation/pact-go/v2@v$${PACT_GO_VERSION}
+      - pact-go -l DEBUG install --libDir $${PACT_GO_DOWNLOAD_DIR};
+      - echo $${message} && echo '========================================'
+      - SSL_CERT_FILE=$${PACT_BROKER_CA_CERT}
+        PACT_TEST=true PACT_DO_NOT_TRACK=true PACT_PUBLISH_RESULTS=true
+        PACT_PROVIDER_NAME=lib-manager-go PACT_URL=${pact_url}
+        PACT_VERSION_BRANCH=${branch} PACT_VERSION_COMMIT=${sha}
+        go test -tags=integration -count=1 github.com/sdreger/lib-manager-go/cmd/api -run 'TestPactProvider' -v
+
+services:
+  - name: docker
+    image: docker:27.4-dind
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: /dind-certs
+    volumes:
+      - /opt/woodpeckerci/dind-certs:/dind-certs
+    ports:
+      - 2376
