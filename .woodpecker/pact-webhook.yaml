@@ -25,7 +25,6 @@ steps:
     volumes:
       - /opt/woodpeckerci/dind-certs:/dind-certs
     commands:
-      - apk update && apk add --no-cache git
       - echo "Pack Go Version - $${PACT_GO_VERSION}"
       - export LATEST_GIT_TAG=$(git describe --tags --abbrev=0)
       - echo "Sha - ${sha}"
