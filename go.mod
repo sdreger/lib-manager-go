@@ -15,6 +15,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/minio v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	golang.org/x/sync v0.14.0
+	gopkg.org/swaggerui v1.0.0
 )
 
 require (
@@ -93,4 +94,5 @@ require (
 	google.golang.org/grpc v1.72.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gopkg.org/generic v1.0.0 // indirect
 )
