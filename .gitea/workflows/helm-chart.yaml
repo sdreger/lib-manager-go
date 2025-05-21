@@ -3,7 +3,7 @@ on:
   registry_package: {}
 
 env:
-  CHART_VERSION: 0.0.4
+  CHART_VERSION: 0.0.5
 
 jobs:
   helm:
