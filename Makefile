@@ -5,8 +5,7 @@ KIND_CLUSTER_NAME := lib-manager-cluster
 
 PACT_SSL_CA_CERT := tls-dell-traefik/ca.pem
 PACT_DO_NOT_TRACK := true
-PACT_BROKER_PROTO := https
-PACT_BROKER_URL := pact-broker.dreger.lan
+PACT_BROKER_URL := https://pact-broker.dreger.lan
 PACT_PROVIDER_NAME := lib-manager-go
 PACT_VERSION_COMMIT := $(shell git describe --tags --abbrev=0)
 PACT_VERSION_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
@@ -142,16 +141,15 @@ helm/uninstall/prod:
 .PHONY: pact/provider/test
 pact/provider/test:
 	@echo "--- 🔨Running Producer Pact tests "
-	PACT_DO_NOT_TRACK=${PACT_DO_NOT_TRACK} PACT_PROVIDER_NAME=${PACT_PROVIDER_NAME} \
-		PACT_BROKER_PROTO=${PACT_BROKER_PROTO} PACT_BROKER_URL=${PACT_BROKER_URL} \
+	PACT_DO_NOT_TRACK=${PACT_DO_NOT_TRACK} PACT_PUBLISH_RESULTS=true  \
+		PACT_PROVIDER_NAME=${PACT_PROVIDER_NAME} PACT_BROKER_URL=${PACT_BROKER_URL} \
 		PACT_VERSION_BRANCH=${PACT_VERSION_BRANCH} PACT_VERSION_COMMIT=${PACT_VERSION_COMMIT} \
-		PACT_PUBLISH_RESULTS=true go test \
-		-tags=integration -count=1 github.com/sdreger/lib-manager-go/cmd/api -run 'TestPactProvider' -v
+		go test -tags=integration -count=1 github.com/sdreger/lib-manager-go/cmd/api -run 'TestPactProvider' -v
 
 pact/provider/record-deploy:
 	@echo "--- ✅ Recording deployment of provider"
 	PACT_DO_NOT_TRACK=${PACT_DO_NOT_TRACK} SSL_CERT_FILE=${PACT_SSL_CA_CERT} pact-broker record-deployment \
 		--pacticipant $(PACT_PROVIDER_NAME) \
-		--broker-base-url ${PACT_BROKER_PROTO}://$(PACT_BROKER_URL) \
+		--broker-base-url $(PACT_BROKER_URL) \
 		--version ${PACT_VERSION_COMMIT} \
 		--environment production

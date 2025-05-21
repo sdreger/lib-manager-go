@@ -7,8 +7,10 @@ on:
         required: false
         description: Optional git tag for verification
   push:
+    branches:
+      - main
     tags:
-      - '*'
+      - '**'
 
 jobs:
   pact-integration-test:
