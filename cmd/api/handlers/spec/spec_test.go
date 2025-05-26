@@ -19,15 +19,15 @@ func TestController_RegisterRoutes(t *testing.T) {
 	h := NewController(logger)
 	h.RegisterRoutes(&testRegistrar)
 
-	assert.True(t, testRegistrar.IsRouteRegistered("GET /swagger-ui/", h.SwaggerUI))
-	assert.True(t, testRegistrar.IsRouteRegistered("GET /v3/api-docs/", h.OpenAPISpec))
+	assert.True(t, testRegistrar.IsRouteRegistered("GET "+swaggerURLPrefix, h.SwaggerUI))
+	assert.True(t, testRegistrar.IsRouteRegistered("GET "+specURLPrefix, h.APISpec))
 }
 
 func TestSwaggerUI(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
 	controller := Controller{logger: logger}
 
-	req := httptest.NewRequest("GET", "/swagger-ui/", nil)
+	req := httptest.NewRequest("GET", swaggerURLPrefix, nil)
 	w := httptest.NewRecorder()
 	err := controller.SwaggerUI(context.Background(), w, req)
 	if assert.NoError(t, err, "should get SwaggerUI index page") {
@@ -36,7 +36,7 @@ func TestSwaggerUI(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 	}
 
-	req = httptest.NewRequest("GET", "/swagger-ui/swagger-ui-bundle.js", nil)
+	req = httptest.NewRequest("GET", swaggerURLPrefix+"swagger-ui-bundle.js", nil)
 	w = httptest.NewRecorder()
 	err = controller.SwaggerUI(context.Background(), w, req)
 	if assert.NoError(t, err, "should get SwaggerUI JS bundle") {
@@ -50,14 +50,14 @@ func TestOpenAPISpec(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(100)}))
 	controller := Controller{logger: logger}
 
-	specFile, err := swaggerUI.Open(specFileName)
+	specFile, err := apiSpec.Open(specFileName)
 	require.NoError(t, err)
 	specFileContent, err := io.ReadAll(specFile)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest("GET", specURLPrefix+specFileName, nil)
 	w := httptest.NewRecorder()
-	err = controller.OpenAPISpec(context.Background(), w, req)
+	err = controller.APISpec(context.Background(), w, req)
 	if assert.NoError(t, err, "should get OpenAPI spec file") {
 		result := w.Result()
 		defer result.Body.Close()

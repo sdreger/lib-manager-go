@@ -10,12 +10,13 @@ import (
 )
 
 const (
-	specURLPrefix = "/v3/api-docs/"
-	specFileName  = "openapi.yaml"
+	specURLPrefix    = "/v3/api-docs/"
+	specFileName     = "openapi.yaml"
+	swaggerURLPrefix = "/swagger-ui/"
 )
 
 //go:embed openapi.yaml
-var swaggerUI embed.FS
+var apiSpec embed.FS
 
 type Controller struct {
 	logger *slog.Logger
@@ -28,23 +29,23 @@ func NewController(logger *slog.Logger) *Controller {
 }
 
 func (cnt *Controller) RegisterRoutes(registrar handlers.RouteRegistrar) {
-	registrar.RegisterRoute(http.MethodGet, "", "/swagger-ui/", cnt.SwaggerUI)
-	registrar.RegisterRoute(http.MethodGet, "", "/v3/api-docs/", cnt.OpenAPISpec)
+	registrar.RegisterRoute(http.MethodGet, "", swaggerURLPrefix, cnt.SwaggerUI)
+	registrar.RegisterRoute(http.MethodGet, "", specURLPrefix, cnt.APISpec)
 }
 
 func (cnt *Controller) SwaggerUI(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
 	defer cnt.closeBody(req)
 
-	swaggerURL := specURLPrefix + specFileName
-	http.StripPrefix("/swagger-ui/", swaggerui.Handler(swaggerURL)).ServeHTTP(w, req)
+	specURL := specURLPrefix + specFileName
+	http.StripPrefix(swaggerURLPrefix, swaggerui.Handler(specURL)).ServeHTTP(w, req)
 
 	return nil
 }
 
-func (cnt *Controller) OpenAPISpec(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
+func (cnt *Controller) APISpec(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
 	defer cnt.closeBody(req)
 
-	http.StripPrefix(specURLPrefix, http.FileServer(http.FS(swaggerUI))).ServeHTTP(w, req)
+	http.StripPrefix(specURLPrefix, http.FileServer(http.FS(apiSpec))).ServeHTTP(w, req)
 
 	return nil
 }
