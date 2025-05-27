@@ -83,7 +83,6 @@ func TestMinioStore_HealthCheck(t *testing.T) {
 	minioConfig := tests.GetTestMinioConfig(t, minioContainer)
 	minioStore := setUpTestMinioStore(t, minioConfig)
 
-	time.Sleep(3 * time.Second)
 	err := minioStore.HealthCheck(ctx)
 	require.NoError(t, err, "failed to perform a healthcheck")
 
@@ -114,12 +113,29 @@ func setUpTestMinioStore(t *testing.T, blobStoreConfig config.BLOBStoreConfig) *
 
 	minioStore, err := NewMinioStore(logger, blobStoreConfig)
 	require.NoError(t, err, "failed to create minio store")
+	waitForHealthcheckPass(t, minioStore)
 
 	t.Cleanup(func() {
 		minioStore.Close()
 	})
 
 	return minioStore
+}
+
+func waitForHealthcheckPass(t *testing.T, minioStore *MinioStore) {
+	for i := 0; i < 5; i++ {
+		if err := minioStore.HealthCheck(t.Context()); err != nil {
+			t.Logf("waiting for Minio healthckeck pass...: %v", err)
+			time.Sleep(time.Second)
+		} else {
+			t.Logf("Minio healthcheck passed")
+			break
+		}
+	}
+
+	if err := minioStore.HealthCheck(t.Context()); err != nil {
+		t.Fatalf("Minio healthcheck failed: %v", err)
+	}
 }
 
 func storeBookCover(ctx context.Context, minioStore *MinioStore, path string, content string) error {
