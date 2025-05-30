@@ -11,6 +11,8 @@ tags:
     description: Manage books
   - name: 'File Types'
     description: Manage file types
+  - name: 'Covers'
+    description: Manage book covers
 paths:
   /v1/books:
     get:
@@ -106,6 +108,27 @@ paths:
                 errors:
                   - message: 'wrong sort request: title,desc'
                     field: 'sort'
+
+  /v1/covers/{book_publisher}/{cover_file_name}:
+    get:
+      operationId: getBookCover
+      tags:
+        - Covers
+      summary: Book cover
+      description: Returns book cover image
+      parameters:
+        - $ref: '#/components/parameters/bookPublisher'
+        - $ref: '#/components/parameters/coverFileName'
+      responses:
+        200:
+          description: Successful response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        404:
+          $ref: '#/components/responses/NotFound'
 
 components:
   parameters:
@@ -272,6 +295,26 @@ components:
       required: false
       description: 'The result sorting order'
       example: 'id,asc'
+
+    bookPublisher:
+      in: path
+      name: book_publisher
+      schema:
+        type: string
+        pattern: '^[a-z]+$'
+      required: true
+      description: 'Book publisher name (lowercase)'
+      example: 'oreilly'
+
+    coverFileName:
+      in: path
+      name: cover_file_name
+      schema:
+        type: string
+        pattern: '^[\w\.]+$'
+      required: true
+      description: 'Book cover file name'
+      example: 'BH12345678.jpg'
 
   responses:
     NotFound:
