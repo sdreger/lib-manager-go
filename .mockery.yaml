@@ -27,3 +27,6 @@ packages:
   github.com/sdreger/lib-manager-go/internal/domain/filetype:
     interfaces:
       Store: {}
+  github.com/sdreger/lib-manager-go/internal/domain/publisher:
+    interfaces:
+      Store: {}
