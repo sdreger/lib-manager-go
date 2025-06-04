@@ -18,6 +18,7 @@ packages:
       BookService: {}
       CoverService: {}
       FileTypeService: {}
+      PublisherService: {}
   github.com/sdreger/lib-manager-go/internal/domain/book:
     interfaces:
       Store: {}
