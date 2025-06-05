@@ -13,6 +13,9 @@ tags:
     description: Manage file types
   - name: 'Covers'
     description: Manage book covers
+  - name: 'Publishers'
+    description: Manage book publishers
+
 paths:
   /v1/books:
     get:
@@ -129,6 +132,35 @@ paths:
                 format: binary
         404:
           $ref: '#/components/responses/NotFound'
+
+  /v1/publishers:
+    get:
+      operationId: getPublishers
+      tags:
+        - Publishers
+      summary: Publishers list
+      description: Returns a pageable publisher list
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/publisherSort'
+      responses:
+        200:
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublisherItemPage"
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                errors:
+                  - message: 'wrong sort request: title,desc'
+                    field: 'sort'
 
 components:
   parameters:
@@ -315,6 +347,21 @@ components:
       required: true
       description: 'Book cover file name'
       example: 'BH12345678.jpg'
+
+    publisherSort:
+      in: query
+      name: sort
+      schema:
+        type: string
+        default: 'id,desc'
+        enum:
+          - 'id,desc'
+          - 'id,asc'
+          - 'name,asc'
+          - 'name,desc'
+      required: false
+      description: 'The result sorting order'
+      example: 'id,asc'
 
   responses:
     NotFound:
@@ -579,6 +626,40 @@ components:
       example:
           id: 1
           name: 'pdf'
+
+    PublisherItemPage:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/BasePage'
+            - type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: array
+                  minItems: 0
+                  items:
+                    $ref: '#/components/schemas/PublisherItem'
+
+    PublisherItem:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: 'int64'
+        name:
+          type: string
+      example:
+        id: 1
+        name: 'OReilly'
 
     ErrorResponse:
       type: object
