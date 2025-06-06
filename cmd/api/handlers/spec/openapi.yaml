@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Library management API
   description: API for managing a book library
-  version: 0.0.8
+  version: 0.0.9
 servers:
   - url: http://localhost:8070
     description: Local test server
