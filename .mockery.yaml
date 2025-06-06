@@ -18,6 +18,7 @@ packages:
       BookService: {}
       CoverService: {}
       FileTypeService: {}
+      PublisherService: {}
   github.com/sdreger/lib-manager-go/internal/domain/book:
     interfaces:
       Store: {}
@@ -25,5 +26,8 @@ packages:
     interfaces:
       BlobStore: {}
   github.com/sdreger/lib-manager-go/internal/domain/filetype:
+    interfaces:
+      Store: {}
+  github.com/sdreger/lib-manager-go/internal/domain/publisher:
     interfaces:
       Store: {}

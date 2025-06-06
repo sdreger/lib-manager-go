@@ -65,6 +65,7 @@ func (router *Router) registerRouteHandlers(db *sqlx.DB, blobStore *blobtstore.M
 	handlersV1.NewBookController(logger, db).RegisterRoutes(router)
 	handlersV1.NewCoverController(logger, blobStore).RegisterRoutes(router)
 	handlersV1.NewFileTypeController(logger, db).RegisterRoutes(router)
+	handlersV1.NewPublisherController(logger, db).RegisterRoutes(router)
 }
 
 func (router *Router) AddApplicationMiddleware(mw handlers.Middleware) {
