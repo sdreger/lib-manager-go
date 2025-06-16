@@ -1,0 +1,34 @@
+# Dynamic variable substitution - https://github.com/pact-foundation/pact_broker/blob/master/lib/pact_broker/doc/views/webhooks.markdown#dynamic-variable-substitution
+### Create a webhook for the 'contract_requiring_verification_published' event
+PUT https://pact-broker.domain.lan/webhooks/d278b4fa-f77e-4dd9-a45a-fb38f5d37a54
+Content-Type: application/json
+
+{
+  "provider": {
+    "name": "lib-manager-go"
+  },
+  "consumer": {
+    "name": "lib-manager-react-ts"
+  },
+  "events": [{
+    "name": "contract_requiring_verification_published"
+  }],
+  "request": {
+    "method": "POST",
+    "url": "https://gitea.domain.lan/api/v1/repos/sdreger/lib-manager-go/actions/workflows/pact-on-webhook.yaml/dispatches",
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Authorization": "Bearer <REDACTED>"
+    },
+    "body": {
+      "ref": "refs/heads/${pactbroker.providerVersionBranch}",
+      "inputs": {
+        "branch": "${pactbroker.providerVersionBranch}",
+        "pact_url": "${pactbroker.pactUrl}",
+        "provider_version": "${pactbroker.providerVersionNumber}",
+        "message": "Verify changed pact for ${pactbroker.consumerName} version ${pactbroker.consumerVersionNumber} branch ${pactbroker.consumerVersionBranch} by ${pactbroker.providerVersionNumber} (${pactbroker.providerVersionDescriptions})"
+      }
+    }
+  }
+}
