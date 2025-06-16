@@ -1,38 +1,44 @@
-name: Run Pact integration tests for a new tag
+run-name: On Pact broker webhook Pact verification
+name: Run integration tests on Pact broker webhook
 on:
   workflow_dispatch:
     inputs:
-      tag:
+      branch:
         type: string
-        required: false
-        description: Optional git tag for verification
-  push:
-    branches:
-      - main
-    tags:
-      - '**'
+        required: true
+        description: Git branch
+      pact_url:
+        type: string
+        required: true
+        description: Pact broker URL for pending contracts
+      provider_version:
+        type: string
+        required: true
+        description: Git reference for verification
+      message:
+        type: string
+        required: true
+        description: Pact broker message
 
 jobs:
-  pact-integration-test:
+  pact-integration-test-webhook:
     runs-on: ubuntu-22.04
     steps:
-      - name: Print event type
-        run: echo ${{ gitea.event_name }}
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+      - name: Checkout Pact provider version
+        run: |
+          echo "Provider version: ${{ gitea.event.inputs.provider_version }}"
+          git checkout --detach ${{ gitea.event.inputs.provider_version }}
       - name: Set up Golang
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Download dependencies
         run: go mod download
-      - name: Get latest Git tag
-        id: git_tag
-        run: |
-          echo "LATEST_GIT_TAG=$(git describe --tags --abbrev=0)" >> ${GITHUB_ENV}
       - name: Pact Go install
         env:
           PACT_GO_VERSION: 2.4.1
@@ -47,13 +53,11 @@ jobs:
         run: |
           printf '%s' "${CA_SECRET}" > /etc/ssl/certs/pact-broker-ca.pem
       - name: Run integration tests
-        env:
-          LATEST_GIT_TAG: ${{ inputs.tag || env.LATEST_GIT_TAG }}
         run: |
-          echo "Latest Tag: ${LATEST_GIT_TAG}"
-          git checkout ${LATEST_GIT_TAG}
+          echo ${{ gitea.event.inputs.message }} && echo '========================================'
           SSL_CERT_FILE=/etc/ssl/certs/pact-broker-ca.pem \
           PACT_TEST=true PACT_DO_NOT_TRACK=true PACT_PUBLISH_RESULTS=true \
-          PACT_PROVIDER_NAME=lib-manager-go PACT_BROKER_URL=${{ vars.PACT_BROKER_URL }} \
-          PACT_VERSION_BRANCH=main PACT_VERSION_COMMIT=${LATEST_GIT_TAG} \
+          PACT_PROVIDER_NAME=lib-manager-go PACT_URL=${{ gitea.event.inputs.pact_url }} \
+          PACT_VERSION_BRANCH=${{ gitea.event.inputs.branch }} \
+          PACT_VERSION_COMMIT=${{ gitea.event.inputs.provider_version }} \
           go test -tags=integration -count=1 github.com/sdreger/lib-manager-go/cmd/api -run 'TestPactProvider' -v
