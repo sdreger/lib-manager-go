@@ -54,7 +54,7 @@ jobs:
           printf '%s' "${CA_SECRET}" > /etc/ssl/certs/pact-broker-ca.pem
       - name: Run integration tests
         run: |
-          echo ${{ gitea.event.inputs.message }} && echo '========================================'
+          echo '${{ gitea.event.inputs.message }}' && echo '========================================'
           SSL_CERT_FILE=/etc/ssl/certs/pact-broker-ca.pem \
           PACT_TEST=true PACT_DO_NOT_TRACK=true PACT_PUBLISH_RESULTS=true \
           PACT_PROVIDER_NAME=lib-manager-go PACT_URL=${{ gitea.event.inputs.pact_url }} \
