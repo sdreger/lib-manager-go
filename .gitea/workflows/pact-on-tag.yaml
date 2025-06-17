@@ -7,8 +7,6 @@ on:
         required: false
         description: Optional git tag for verification
   push:
-    branches:
-      - main
     tags:
       - '**'
 
